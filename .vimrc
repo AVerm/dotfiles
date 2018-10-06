@@ -55,6 +55,7 @@ autocmd FileType rust    map <buffer> <C-F10> :wa <C-v><C-j> !cargo test -- --no
 autocmd FileType haskell map <buffer> <F9>  :wa <C-v><C-j> !ghc --make %:p:r <C-v><C-j> !%:p:r <CR><CR>
 autocmd FileType haskell map <buffer> <F10> :wa <C-v><C-j> !ghc --make %:p:r <CR>
 autocmd FileType prolog  map <buffer> <F9>  :wa <C-v><C-j> !swipl %:p <CR>
+autocmd FileType perl    map <buffer> <F9>  :wa <C-v><C-j> !perl % <CR>
 
 "File-specific indentations here
 autocmd FileType haskell setlocal shiftwidth=4 tabstop=4 expandtab
