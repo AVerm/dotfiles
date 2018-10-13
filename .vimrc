@@ -39,6 +39,7 @@ nnoremap tj  :bnext<CR>
 nnoremap tk  :bprevious<CR>
 nnoremap tl  :ls<CR>
 nnoremap <C-n> :NERDTreeToggle<CR>
+map <Leader>s :Gstatus<CR>
 
 "<F9> does the build process and then runs
 "<F10> does a special run (nocompile, test, etc.)
