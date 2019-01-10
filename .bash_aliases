@@ -16,7 +16,7 @@ journal() {
 
 note() {
 	SHORTDATE=`date +%Y%m%d`
-	FILENAME="${SHORTDATE}notes.txt"
+	FILENAME="${SHORTDATE}notes.md"
 
 	vim $FILENAME;
 }

@@ -1,2 +1,4 @@
+! Capslock is my utility key
 keysym Caps_Lock = Multi_key dead_greek
+! Remove shiftlock
 clear Lock
