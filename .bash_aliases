@@ -9,8 +9,10 @@ journal() {
 	HYPHENDATE=`date +%F`
 	FILENAME="${SHORTDATE}_${TITLE}.txt"
 
-	echo $NAME >> $FILENAME
-	echo $HYPHENDATE >> $FILENAME
+	if [ ! -f $FILENAME ]; then
+		echo $NAME >> $FILENAME
+		echo $HYPHENDATE >> $FILENAME
+	fi
 	vim $FILENAME;
 }
 
