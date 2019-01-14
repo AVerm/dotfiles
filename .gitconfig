@@ -1,0 +1,10 @@
+[user]
+	name = Alex Vermillion
+	email = dev@ajvermillion.com
+[core]
+	editor = vim
+	excludesfile = /home/alex/.gitignore
+[credential]
+	helper = store --file ~/.my-credentials
+[push]
+	default = simple
