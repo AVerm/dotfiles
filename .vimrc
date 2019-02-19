@@ -58,6 +58,7 @@ autocmd FileType haskell map <buffer> <F9>  :wa <C-v><C-j> !ghc --make %:p:r <C-
 autocmd FileType haskell map <buffer> <F10> :wa <C-v><C-j> !ghc --make %:p:r <CR>
 autocmd FileType prolog  map <buffer> <F9>  :wa <C-v><C-j> !swipl %:p <CR>
 autocmd FileType perl    map <buffer> <F9>  :wa <C-v><C-j> !perl % <CR>
+autocmd FileType python    map <buffer> <F9>  :wa <C-v><C-j> !python % <CR>
 
 "File-specific indentations here
 autocmd FileType haskell setlocal shiftwidth=4 tabstop=4 expandtab
