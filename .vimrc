@@ -61,6 +61,7 @@ autocmd FileType perl    map <buffer> <F9>  :wa <C-v><C-j> !perl % <CR>
 
 "File-specific indentations here
 autocmd FileType haskell setlocal shiftwidth=4 tabstop=4 expandtab
+autocmd FileType asm setlocal shiftwidth=4 tabstop=4 expandtab
 
 "Turn on English spellcheck in .txt and .md files along with linewrapping
 autocmd BufRead,BufNewFile *.md,*.txt setlocal wrap linebreak nolist spell spelllang=en_us
