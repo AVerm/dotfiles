@@ -1,6 +1,8 @@
 LINKTYPE = -s # -s for soft, or -P for hard
-DOTFILES = .bash_aliases .gitignore .vimrc .XCompose .Xmodmap # List of dotfiles
+DOTFILES = .bash_aliases .gitignore .vimrc .XCompose .xkb # List of dotfiles
 all: link
+	# Needed so that xkb settings not overwritten by gnome
+	gsettings set org.gnome.settings-daemon.plugins.keyboard active false
 	git config --global core.excludesfile ~/.gitignore # Set up global gitignore
 
 .PHONY: link $(DOTFILES) # Not a real file target
