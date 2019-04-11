@@ -52,7 +52,7 @@ autocmd FileType c       map <buffer> <F9>  :wa <C-v><C-j> !gcc -Wall -Wextra -W
 autocmd FileType c       map <buffer> <F10> :wa <C-v><C-j> !gcc -Wall -Wextra -Wpedantic -Wdouble-promotion -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wmissing-include-dirs -Wswitch-enum -Wuninitialized -Wcast-qual -Wcast-align -Wlogical-op -Winline -Winvalid-pch -o %:p:r % <CR>
 autocmd FileType ruby    map <buffer> <F9>  :wa <C-v><C-j> !ruby % <CR>
 autocmd FileType rust    map <buffer> <F9>  :wa <C-v><C-j> !cargo run <CR>
-autocmd FileType rust    map <buffer> <F10> :wa <C-v><C-j> !cargo +nightly clippy<CR>
+autocmd FileType rust    map <buffer> <F10> :wa <C-v><C-j> !cargo clippy<CR>
 autocmd FileType rust    map <buffer> <C-F10> :wa <C-v><C-j> !cargo test -- --nocapture<CR>
 autocmd FileType haskell map <buffer> <F9>  :wa <C-v><C-j> !ghc --make %:p:r <C-v><C-j> !%:p:r <CR><CR>
 autocmd FileType haskell map <buffer> <F10> :wa <C-v><C-j> !ghc --make %:p:r <CR>
