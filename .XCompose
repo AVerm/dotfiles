@@ -11,6 +11,7 @@ include "%L"
 <Multi_key> <p> <i>                     : "π"	# PI
 <Multi_key> <s> <n> <o> <w> <m> <a> <n>	: "☃"	# FOR FUN
 <Multi_key> <asciicircum> <greater>     : " ⃗"	# USED FOR VECTORS
+<Multi_key> <d> <e> <g> <r> <e> <e>	: "°"	# DEGREE SYMBOL
 
 # ~/.XCompose
 
