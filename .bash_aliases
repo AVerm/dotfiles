@@ -1,6 +1,7 @@
 alias todolist='vim ~/Desktop/Todo.txt'
 alias asuserver='ssh -p 22 avermill@general.asu.edu'
 alias net_test='ping 8.8.8.8 -f -i0.2'
+alias rot13='tr 'A-Za-z' 'N-ZA-Mn-za-m''
 
 journal() {
 	NAME="$@"
