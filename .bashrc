@@ -137,3 +137,6 @@ fi
 if [ -d "$HOME/.cargo/bin" ] ; then
 	PATH="$HOME/.kotlinc/bin:$PATH"
 fi
+
+# For fun
+fortune | cowsay
