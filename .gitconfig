@@ -8,3 +8,5 @@
 	helper = store --file ~/.my-credentials
 [push]
 	default = simple
+[branch]
+	autosetuprebase = always
