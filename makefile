@@ -4,6 +4,7 @@ all: link
 	# Needed so that xkb settings not overwritten by gnome
 	gsettings set org.gnome.settings-daemon.plugins.keyboard active false
 	git config --global core.excludesfile ~/.gitignore # Set up global gitignore
+	crontab crontab # Load crontab settings from file
 
 .PHONY: link $(DOTFILES) # Not a real file target
 link: $(DOTFILES) # To make link, process dotfiles
