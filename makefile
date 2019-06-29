@@ -1,6 +1,6 @@
 LINKTYPE = -s # -s for soft, or -P for hard
 DOTFILES = .bash_aliases .gitignore .vimrc .XCompose .xkb # List of dotfiles
-CRONFILE = crontab # Location of file holding crontab contents
+CRONFILE = .crontab # Location of file holding crontab contents
 all: link git cron keyboardsettings # These are the three main tagets
 
 .PHONY: link $(DOTFILES) # Not a real file target

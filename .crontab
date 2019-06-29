@@ -21,4 +21,4 @@
 # 
 # m h  dom mon dow   command
 # Add "> /dev/null 2>&1" to the end of commands to silence output
-@hourly crontab -l > ~/dotfiles/crontab 2> /dev/null
+@hourly crontab -l > ~/dotfiles/.crontab 2> /dev/null
