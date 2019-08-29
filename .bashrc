@@ -140,3 +140,6 @@ fi
 
 # For fun
 fortune | cowsay
+
+# Set navigation to be vi-style
+set -o vi
