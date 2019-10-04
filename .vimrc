@@ -26,6 +26,7 @@ set cursorcolumn
 syntax on
 set incsearch
 set lazyredraw
+"set undofile
 set t_Co=256
 set background=dark
 colorscheme thaumaturge
