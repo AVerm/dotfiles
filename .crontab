@@ -21,4 +21,10 @@
 # 
 # m h  dom mon dow   command
 # Add "> /dev/null 2>&1" to the end of commands to silence output
+
+# use /bin/bash to run commands, instead of the default /bin/sh
+#SHELL=/bin/bash
+#DISPLAY=:0
+
 @hourly crontab -l > ~/dotfiles/.crontab 2> /dev/null
+
