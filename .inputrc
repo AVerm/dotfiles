@@ -1,0 +1,2 @@
+set revert-all-at-newline on
+Control-l: clear-screen
