@@ -1,4 +1,5 @@
 *.sw?
 *.un~
 .gitignore
-{M,m}akefile
+Makefile
+makefile
