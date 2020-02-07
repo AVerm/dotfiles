@@ -78,3 +78,7 @@ autocmd FileType text map <buffer> j gj
 autocmd FileType text map <buffer> k gk
 autocmd FileType markdown map <buffer> j gj
 autocmd FileType markdown map <buffer> k gk
+
+"Add utility command for hex-editing files
+:command Hex %!xxd
+:command Unhex %!xxd -r
