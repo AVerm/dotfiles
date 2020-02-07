@@ -1,5 +1,5 @@
 LINKTYPE = -s # -s for soft, or -P for hard
-DOTFILES = .bash_aliases .gitignore .inputrc .vimrc .XCompose .xkb # List of dotfiles
+DOTFILES = .bash_aliases .gitignore .inputrc .vimrc .XCompose .xkb .screenrc # List of dotfiles
 CRONFILE = .crontab # Location of file holding crontab contents
 all: link git cron keyboardsettings # These are the three main tagets
 
