@@ -12,6 +12,7 @@ Plugin 'rust-lang/rust.vim'
 Plugin 'editorconfig/editorconfig-vim'
 Plugin 'tpope/vim-surround'
 Plugin 'tpope/vim-fugitive'
+Plugin 'lervag/vimtex'
 call vundle#end()
 filetype plugin indent on
 
@@ -34,10 +35,22 @@ let g:thaumaturge_termcolors=256
 "Turn on English spellcheck
 "(in code files, will only apply to comments if syntax is correctly declared)
 set spell spelllang=en_us
+" Allows editing past the end of the line
+"set virtualedit=all
 
 set hidden
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#fnamemod = ':t'
+
+" Set up LaTeX according to
+" https://castel.dev/post/lecture-notes-1/
+let g:tex_flavor='latex'
+let g:vimtex_view_method='general'
+let g:vimtex_view_general_viewer='/usr/local/bin/mupdf-x11'
+let g:vimtex_quickfix_mode=0
+set conceallevel=1
+let g:tex_conceal='abdmg'
+let g:vimtex_view_general_options_latexmk='-reuse-instance'
 
 nnoremap tt  :edit<Space>
 nnoremap td  :bp <BAR> bd #<CR>
