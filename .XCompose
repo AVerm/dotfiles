@@ -11,10 +11,11 @@ include "%L"
 <Multi_key> <p> <i>                     : "π"	# PI
 <Multi_key> <s> <n> <o> <w> <m> <a> <n>	: "☃"	# FOR FUN
 <Multi_key> <asciicircum> <greater>     : " ⃗"	# USED FOR VECTORS
-<Multi_key> <d> <e> <g> <r> <e> <e>	: "°"	# DEGREE SYMBOL
 <Multi_key> <b> <a> <r>	                : "̄" U0304	# COMBINING DIACRITIC USED IN STATISTICS (X BAR)
 <Multi_key> <h> <a> <t> 	        : "̂" U0302	# COMBINING DIACRITIC USED IN STATISTICS (P HAT)
 <Multi_key> <b> <l> <a> <n> <k>         : "␣" # BLANK SPACE CHARACTER
+<Multi_key> <c> <h> <e> <c> <k>         : "✓" # U2713 CHECK MARK
+<Multi_key> <c> <h> <e> <c> <k> <e> <d> : "☑" # U2611  BALLOT BOX WITH CHECK
 
 # ~/.XCompose
 
