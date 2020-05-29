@@ -9,6 +9,7 @@ alias youtube-audio="mpv --no-video"
 alias psql="sudo -u postgres psql"
 alias cleanname="PWD=.../`basename $(pwd)`"
 alias dashboard="screen -c ~/dashboard.screenrc -S dashboard"
+alias cdtemp="cd `mktemp -d`"
 
 journal() {
 	NAME="$@"
