@@ -1,1 +1,12 @@
+# Turn on utf8 mode
 defutf8 on
+# Always show the bottom status bar
+caption always
+# Turn off copyright notice
+startup_message off
+# Do not focus on mouseclick
+mousetrack off
+
+# Hotkeys
+bind ',' prev
+bind '.' next
