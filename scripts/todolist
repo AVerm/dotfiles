@@ -1,0 +1,4 @@
+#!/bin/bash
+EDITOR="vim"
+LIST="/home/alex/Desktop/Todo.txt"
+$EDITOR $LIST

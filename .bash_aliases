@@ -1,4 +1,3 @@
-alias todolist='vim ~/Desktop/Todo.txt'
 alias asuserver='ssh -p 22 avermill@general.asu.edu'
 alias net_test='ping 1.1.1.1 -f -i0.2'
 alias rot13='tr 'A-Za-z' 'N-ZA-Mn-za-m''
