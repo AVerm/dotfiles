@@ -19,6 +19,9 @@ include "%L"
 <Multi_key> <r> <t> <l>	                : "‮" U202E	# RIGHT-TO-LEFT OVERRIDE
 <Multi_key> <l> <t> <r>	                : "‪" U202A	# LEFT-TO-RIGHT OVERRIDE
 <Multi_key> <a> <l> <e> <p> <h>         : "ℵ" # U2135 ALEPH SYMBOL
+<Multi_key> <p> <e> <n> <i> <s> <space>	: "𓂸" # U130B8: EGYPTIAN HIEROGLYPH D052
+<Multi_key> <p> <e> <n> <i> <s> <asciicircum>	: "𓂹" # U130B9: EGYPTIAN HIEROGLYPH D052A
+<Multi_key> <p> <e> <n> <i> <s> <minus>	: "𓂺" # U130BA: EGYPTIAN HIEROGLYPH D053
 
 # ~/.XCompose
 
