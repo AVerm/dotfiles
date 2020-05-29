@@ -1,0 +1,4 @@
+#! /bin/bash
+while read line; do
+	spd-say "$line"
+done

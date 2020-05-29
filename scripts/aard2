@@ -1,0 +1,7 @@
+#!/bin/bash
+# Location of the jar and dictionary folder
+ROOT="/home/alex/.aard2"
+# Default port is 8013 in the spec
+PORT="8013"
+
+java -Dslobber.port=${PORT} -Dslobber.browse=true -jar ${ROOT}/aard2.jar ${ROOT}/dict/*.slob

@@ -1,0 +1,10 @@
+#!/bin/bash
+while :
+do
+	NUM=$(( $RANDOM % 2 ))
+	if [ $NUM -eq -0 ]; then
+		echo -n '/'
+	else
+		echo -n '\'
+	fi
+done

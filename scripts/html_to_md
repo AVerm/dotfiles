@@ -1,0 +1,10 @@
+#!/bin/bash
+
+WEBPAGE=$1
+NAME=`basename $WEBPAGE .html`
+
+MDFLAGS='-raw_html-native_divs-native_spans'
+
+monolith --no-js $WEBPAGE > $NAME.html
+pandoc "$NAME.html" --from=html --to=markdown$MDFLAGS --output="$NAME.md"
+rm $NAME.html
