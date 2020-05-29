@@ -10,6 +10,7 @@ alias psql="sudo -u postgres psql"
 alias cleanname="PWD=.../`basename $(pwd)`"
 alias dashboard="screen -c ~/dashboard.screenrc -S dashboard"
 alias cdtemp="cd `mktemp -d`"
+alias histogram="sort $1 | uniq -c | sort -nr"
 
 journal() {
 	NAME="$@"
