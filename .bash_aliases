@@ -7,6 +7,7 @@ alias tempff='firefox -no-remote -profile $(mktemp -d)'
 alias gpl='curl https://www.gnu.org/licenses/gpl-3.0.txt | head -n 619 > LICENSE.md'
 alias CAPSOFF="python -c 'from ctypes import *; X11 = cdll.LoadLibrary(\"libX11.so.6\"); display = X11.XOpenDisplay(None); X11.XkbLockModifiers(display, c_uint(0x0100), c_uint(2), c_uint(0)); X11.XCloseDisplay(display)'"
 alias yt-audio="mpv --no-video"
+alias dashboard="screen -c ~/dashboard.screenrc -S dashboard"
 
 journal() {
 	NAME="$@"
@@ -54,4 +55,9 @@ mdtohtml() {
 		# Print error
 		echo "Error," $HTMLNAME "already exists"
 	fi
+}
+
+screenproj() {
+	PROJNAME="$1"
+	screen -c ~/project.screenrc -S "$PROJNAME"
 }

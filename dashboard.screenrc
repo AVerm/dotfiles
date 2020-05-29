@@ -1,0 +1,15 @@
+source .screenrc
+
+screen -t bash 0
+screen -t todo 1 todolist
+screen -t top  2 top -d 5 -o %CPU -i
+# screen -t irc  3 irssi
+
+select 0
+split -v
+focus left
+split
+focus down
+select 2
+focus right
+select 1

@@ -1,0 +1,12 @@
+source .screenrc
+
+screen -t edit	0
+screen -t test	1
+screen -t git	2
+screen -t docs	3
+
+split -v
+focus left
+select 0
+focus right
+select 1
