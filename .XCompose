@@ -18,6 +18,7 @@ include "%L"
 <Multi_key> <c> <h> <e> <c> <k> <e> <d> : "☑" # U2611  BALLOT BOX WITH CHECK
 <Multi_key> <r> <t> <l>	                : "‮" U202E	# RIGHT-TO-LEFT OVERRIDE
 <Multi_key> <l> <t> <r>	                : "‪" U202A	# LEFT-TO-RIGHT OVERRIDE
+<Multi_key> <a> <l> <e> <p> <h>         : "ℵ" # U2135 ALEPH SYMBOL
 
 # ~/.XCompose
 
