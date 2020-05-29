@@ -15,7 +15,6 @@ Plugin 'tpope/vim-fugitive'
 call vundle#end()
 filetype plugin indent on
 
-
 set number
 set numberwidth=1
 set relativenumber
