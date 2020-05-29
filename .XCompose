@@ -16,6 +16,8 @@ include "%L"
 <Multi_key> <b> <l> <a> <n> <k>         : "␣" # BLANK SPACE CHARACTER
 <Multi_key> <c> <h> <e> <c> <k>         : "✓" # U2713 CHECK MARK
 <Multi_key> <c> <h> <e> <c> <k> <e> <d> : "☑" # U2611  BALLOT BOX WITH CHECK
+<Multi_key> <r> <t> <l>	                : "‮" U202E	# RIGHT-TO-LEFT OVERRIDE
+<Multi_key> <l> <t> <r>	                : "‪" U202A	# LEFT-TO-RIGHT OVERRIDE
 
 # ~/.XCompose
 
