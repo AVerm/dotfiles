@@ -1,7 +1,7 @@
 LINKTYPE = -s # -s for soft, or -P for hard
 DOTFILES = .bash_aliases .gitignore .inputrc .vimrc .XCompose .xkb .screenrc project.screenrc dashboard.screenrc scripts # List of dotfiles
 CRONFILE = .crontab # Location of file holding crontab contents
-all: link git cron keyboardsettings # These are the three main tagets
+all: link git cron keyboardsettings userchrome # These are the top-level tagets
 
 .PHONY: link $(DOTFILES) # Not a real file target
 link: $(DOTFILES) # To make link, process dotfiles
@@ -20,3 +20,6 @@ cron: $(CRONFILE) # To set up crontab, run this command
 .PHONY: keyboardsettings # Not a real file target
 keyboardsettings: # To set up keyboard for gnome
 	gsettings set org.gnome.settings-daemon.plugins.keyboard active false # Needed so that xkb settings not overwritten by gnome
+
+userchrome:
+	echo "Don't forget to set up your userChrome.css!"
