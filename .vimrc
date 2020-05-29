@@ -78,6 +78,8 @@ autocmd FileType text map <buffer> j gj
 autocmd FileType text map <buffer> k gk
 autocmd FileType markdown map <buffer> j gj
 autocmd FileType markdown map <buffer> k gk
+autocmd FileType tex map <buffer> j gj
+autocmd FileType tex map <buffer> k gk
 
 "Add utility command for hex-editing files
 :command Hex %!xxd
