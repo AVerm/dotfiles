@@ -37,8 +37,8 @@ mdtohtml() {
 	# The total argument list should be just the markdown filename since it was
 	# already sanitized
 	MDNAME="$@"
-	# Simply strip off the ".md" and replace with ".html"
-	HTMLNAME=`echo "$MDNAME" | sed -e 's_\(.\)\.md_\1.html_'`
+	# Strip off the ".md" and replace with ".html"
+	HTMLNAME=`basename $MDNAME .md`.html
 
 	# If the file doesn't already exist
 	if [ ! -f $HTMLNAME ]; then
