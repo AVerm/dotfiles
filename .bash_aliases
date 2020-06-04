@@ -11,6 +11,7 @@ alias cleanname="PWD=.../`basename $(pwd)`"
 alias dashboard="screen -c ~/dashboard.screenrc -S dashboard"
 alias cdtemp="cd `mktemp -d`"
 alias histogram="sort $1 | uniq -c | sort -nr"
+alias entropy="cat /proc/sys/kernel/random/entropy_avail"
 
 journal() {
 	NAME="$@"
