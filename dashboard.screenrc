@@ -4,6 +4,7 @@ screen -t bash 0
 screen -t todo 1 todolist
 screen -t top  2 top -d 5 -o %CPU -i
 # screen -t irc  3 irssi
+screen -t vpn  4 nordvpn connect United_States
 
 select 0
 split -v
