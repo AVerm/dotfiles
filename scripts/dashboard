@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Launch a new screen session from the dashboard config file named 'dashboard'
+screen -c ~/dashboard.screenrc -S dashboard

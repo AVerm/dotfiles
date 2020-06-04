@@ -8,7 +8,6 @@ alias CAPSOFF="python -c 'from ctypes import *; X11 = cdll.LoadLibrary(\"libX11.
 alias youtube-audio="mpv --no-video"
 alias psql="sudo -u postgres psql"
 alias cleanname="PWD=.../`basename $(pwd)`"
-alias dashboard="screen -c ~/dashboard.screenrc -S dashboard"
 alias cdtemp="cd `mktemp -d`"
 alias histogram="sort $1 | uniq -c | sort -nr"
 alias entropy="cat /proc/sys/kernel/random/entropy_avail"
