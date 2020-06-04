@@ -1,22 +1,26 @@
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"); /* set default namespace to XUL */
 
+/* This was used in an old version of this file with below close brance
+@-moz-document url("chrome://browser/content/browser.xul") {
+*/
+
 /* https://news.ycombinator.com/item?id=18836189 */
 /* Hide tab bar in FF Quantum */
-/*
-@-moz-document url("chrome://browser/content/browser.xul") {
- */
 #TabsToolbar {
 	visibility: collapse !important;
 	margin-bottom: 21px !important;
 }
 
+/* Get rid of the header on the TreeStyleTabs extension sidebar  */
 #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
 	visibility: collapse !important;
 }
 
+/* Make the bookmarks toolbar be visible */
 #PersonalToolbar {
 	collapsed="false"
 }
-/*
+
+/* This was used in an old version of this file with above open brance
 }
- */
+*/
