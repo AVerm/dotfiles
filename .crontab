@@ -26,5 +26,13 @@
 #SHELL=/bin/bash
 #DISPLAY=:0
 
+#@reboot sleep 60 && ./Desktop/Telegram/Telegram > /tmp/tg 2>&1
+#@reboot sleep 60 && run_keybase > /tmp/rk 2>&1
+#@reboot sleep 60 && thunderbird > /tmp/tb 2>&1
+#@reboot sleep 60 && caffeine-indicator > /tmp/ci 2>&1
+#@reboot sleep 60 && blueman-applet > /tmp/ba 2>&1
+#@reboot sleep 60 && redshift-gtk > /tmp/rsg 2>&1
+#@reboot sleep 60 && touch /tmp/crontab_ran > /dev/null 2>&1
 @hourly crontab -l > ~/dotfiles/.crontab 2> /dev/null
-
+#@reboot aard2 2> /dev/null
+#@reboot sleep 60; screen -d -m -S dashboard -c ~/dashboard.screenrc
