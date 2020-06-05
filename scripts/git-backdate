@@ -1,0 +1,8 @@
+#!/bin/bash
+
+FIRSTFILE="$1"
+ALLFILES="$@"
+
+git add $ALLFILES \
+&& git commit \
+	--date="$(stat --format="%y" $FIRSTFILE)"
