@@ -23,6 +23,7 @@ include "%L"
 <Multi_key> <p> <e> <n> <i> <s> <asciicircum>	: "𓂹" # U130B9: EGYPTIAN HIEROGLYPH D052A
 <Multi_key> <p> <e> <n> <i> <s> <minus>	: "𓂺" # U130BA: EGYPTIAN HIEROGLYPH D053
 <Multi_key> <colon> <colon> 		: "̈" # U0308 COMBINING DIAERESIS
+<Multi_key> <0> <equal> 		: "‍" # U200D ZERO WIDTH JOINER
 
 # ~/.XCompose
 
