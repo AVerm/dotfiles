@@ -30,6 +30,9 @@ set background=dark
 colorscheme thaumaturge
 let g:thaumaturge_termcolors=256
 " set clipboard^=unnamed " Use system clipboard for yank and paste
+"Turn on English spellcheck
+"(in code files, will only apply to comments if syntax is correctly declared)
+set spell spelllang=en_us
 
 set hidden
 let g:airline#extensions#tabline#enabled = 1
