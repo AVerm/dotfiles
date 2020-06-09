@@ -3,8 +3,10 @@
 WEBPAGE=$1
 NAME=`basename $WEBPAGE .html`
 
+MONOFLAGS='--no-js --insecure'
 MDFLAGS='-raw_html-native_divs-native_spans'
+PANDOCFLAGS='+RTS -K512m -RTS'
 
-monolith --no-js $WEBPAGE > $NAME.html
-pandoc "$NAME.html" --from=html --to=markdown$MDFLAGS --output="$NAME.md"
+monolith $MONOFLAGS $WEBPAGE > $NAME.html
+pandoc $PANDOCFLAGS "$NAME.html" --from=html --to=markdown$MDFLAGS --output="$NAME.md"
 rm $NAME.html
