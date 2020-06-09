@@ -64,3 +64,8 @@ screenproj() {
 	PROJNAME="$1"
 	screen -c ~/project.screenrc -S "$PROJNAME"
 }
+
+mkcd() {
+	DIRNAME="$1"
+	mkdir --parents "$DIRNAME" && cd "$DIRNAME"
+}
