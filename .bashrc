@@ -143,3 +143,5 @@ fortune | cowsay
 
 # Set navigation to be vi-style
 set -o vi
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
