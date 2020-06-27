@@ -1,12 +1,16 @@
 #!/bin/bash
 
 WEBPAGE=$1
-NAME=`basename $WEBPAGE .html`
+NAME=`basename "$WEBPAGE" .html`
 
 MONOFLAGS='--no-js --insecure'
 MDFLAGS='-raw_html-native_divs-native_spans'
 PANDOCFLAGS='+RTS -K512m -RTS'
 
 monolith $MONOFLAGS $WEBPAGE > $NAME.html
-pandoc $PANDOCFLAGS "$NAME.html" --from=html --to=markdown$MDFLAGS --output="$NAME.md"
+pandoc $PANDOCFLAGS "$NAME.html" \
+	--from=html \
+	--to=markdown$MDFLAGS \
+	--output="$NAME.md"
+
 rm $NAME.html
