@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Exit if any command fails
+set -e
+
+# Move to temp directory
+DIR=$(mktemp -d --suffix="web_pdf_viewer")
+cd $DIR
+
+# Grab the name of the page and find the base name
+WEBPAGE=$1
+NAME=`basename "$WEBPAGE"`
+
+# Convert to pdf as chosen and view
+html_to_md $WEBPAGE && \
+md_to_latex $NAME.md && \
+xpdf $NAME.pdf
+
+# Remove the leftover files
+rm $NAME.pdf
+cd /tmp/ && rm -r $DIR
