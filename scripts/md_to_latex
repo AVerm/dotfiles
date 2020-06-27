@@ -1,0 +1,12 @@
+#!/bin/bash
+
+MDFILE=$1
+NAME=`basename "$MDFILE" .md`
+
+MDFLAGS='-raw_html-native_divs-native_spans'
+PANDOCFLAGS='+RTS -K512m -RTS'
+
+pandoc $PANDOCFLAGS "$NAME.md" \
+	--from=markdown$MDFLAGS \
+	-V CJKmainfont="CMU Serif Roman" \
+	--output="$NAME.pdf"
