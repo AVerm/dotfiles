@@ -6,6 +6,8 @@ caption always
 startup_message off
 # Do not focus on mouseclick
 mousetrack off
+# Use full color support
+term screen-256color
 
 # Hotkeys
 bind ',' prev
