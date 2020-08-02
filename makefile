@@ -1,5 +1,5 @@
 LINKTYPE = -s # -s for soft, or -P for hard
-DOTFILES = .bash_aliases .gitignore .inputrc .vimrc .XCompose .xkb .screenrc project.screenrc dashboard.screenrc scripts # List of dotfiles
+DOTFILES = .bash_aliases .gitignore .inputrc .vimrc .XCompose .xkb .screenrc project.screenrc dashboard.screenrc scripts .ghci # List of dotfiles
 CRONFILE = .crontab # Location of file holding crontab contents
 all: link git cron keyboardsettings userchrome # These are the top-level tagets
 
