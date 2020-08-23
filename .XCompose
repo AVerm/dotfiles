@@ -27,6 +27,9 @@ include "%L"
 <Multi_key> <0> <space> 		: "​" # U200B ZERO WIDTH SPACE
 <Multi_key> <grave> <grave>		: "“" # U201C LEFT DOUBLE QUOTATION MARK
 <Multi_key> <quotedbl> <quotedbl>	: "”" # U201D RIGHT DOUBLE QUOTATION MARK
+<Multi_key> <a> <l> <l>			: "∀" # U2200 FOR ALL
+<Multi_key> <e> <x> <i> <s> <t> <s>	: "∃" # U2203 THERE EXISTS
+<Multi_key> <0> <0>			: "∞" # U+221E ∞ INFINITY
 
 # ~/.XCompose
 
