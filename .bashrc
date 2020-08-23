@@ -145,3 +145,6 @@ fortune | cowsay
 set -o vi
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# Add programs that are not already installed that I have stored in my application folder
+PATH="$PATH:$HOME/Applications/Launchers"
