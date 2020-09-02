@@ -13,6 +13,7 @@ alias cdtemp="cd `mktemp -d`"
 alias histogram="sort $1 | uniq -c | sort -nr"
 alias entropy="cat /proc/sys/kernel/random/entropy_avail"
 alias mpv="mpv --fullscreen"
+alias obscam="sudo modprobe v4l2loopback video_nr=10 card_label=\"OBS Video Source\" exclusive_caps=1"
 
 journal() {
 	NAME="$@"
