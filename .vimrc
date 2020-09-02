@@ -13,6 +13,10 @@ Plugin 'editorconfig/editorconfig-vim'
 Plugin 'tpope/vim-surround'
 Plugin 'tpope/vim-fugitive'
 Plugin 'lervag/vimtex'
+" Colorschemes
+Plugin 'baines/vim-colorscheme-thaumaturge'
+Plugin 'ajmwagar/vim-deus'
+Plugin 'altercation/vim-colors-solarized'
 call vundle#end()
 filetype plugin indent on
 
