@@ -1,0 +1,56 @@
+#~/bin/bash
+
+# The directory in which all the lists are kept
+LISTDIR="$HOME/Documents/lists"
+# The location of the list template, does not necessarily
+# need to be under LISTDIR
+LISTTEMPLATE="$LISTDIR/.template.md"
+# Set editor if it is somehow unset so far
+: $ {EDITOR="vim"}
+
+# If the variable has non-zero length
+if [ -n "$1" ]; then
+	case "$1" in
+		# If it is an absolute path
+		/*) FILENAME="$1"
+		;;
+		# If it is a relative path
+		*) FILENAME="$LISTDIR/$1.md"
+		;;
+	esac
+	# If the desired list does not yet exist
+	if [ ! -f "$FILENAME" ]; then
+		touch "$FILENAME"
+		# AND a template can be used to build it
+		echo "$LISTTEMPLATE"
+		if [ -f "$LISTTEMPLATE" ]; then
+			# Fill it from the template
+			cat "$LISTTEMPLATE" > "$FILENAME"
+		fi
+	fi
+	# Open in editor
+	"$EDITOR" "$FILENAME"
+# If no arguments were provided
+else
+	# Following this: https://stackoverflow.com/a/18887210
+	shopt -s nullglob
+	# Get files in list directory
+	FILES=($LISTDIR/*)
+	shopt -u nullglob
+	# If the directory is empty
+	if [ ${#FILES[@]} -eq 0 ]; then
+		# Warn user
+		echo "There are no files in '$LISTDIR'"
+	# If there are files in LISTDIR
+	else
+		# Let user choose file
+		echo "Choose a list to edit:"
+		select FILENAME in $FILES ; do
+			# Open in editor
+			"$EDITOR" "$FILENAME"
+			# Without this line, goes back into
+			# selection after finished editing
+			break
+		done
+	fi
+fi
