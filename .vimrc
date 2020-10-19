@@ -76,7 +76,7 @@ autocmd FileType rust    map <buffer> <F9>  :wa <C-v><C-j> !cargo run <CR>
 autocmd FileType rust    map <buffer> <F10> :wa <C-v><C-j> !cargo clippy<CR>
 autocmd FileType rust    map <buffer> <C-F10> :wa <C-v><C-j> !cargo test -- --nocapture<CR>
 autocmd FileType haskell map <buffer> <F9>  :wa <C-v><C-j> !ghc --make %:p:r <C-v><C-j> !%:p:r <CR><CR>
-autocmd FileType haskell map <buffer> <F10> :wa <C-v><C-j> !ghc --make %:p:r <CR>
+autocmd FileType haskell map <buffer> <F10> :wa <C-v><C-j> !hlint %:p <CR>
 autocmd FileType prolog  map <buffer> <F9>  :wa <C-v><C-j> !swipl %:p <CR>
 autocmd FileType perl    map <buffer> <F9>  :wa <C-v><C-j> !perl % <CR>
 autocmd FileType python    map <buffer> <F9>  :wa <C-v><C-j> !python % <CR>
