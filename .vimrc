@@ -49,12 +49,10 @@ let g:airline#extensions#tabline#fnamemod = ':t'
 " Set up LaTeX according to
 " https://castel.dev/post/lecture-notes-1/
 let g:tex_flavor='latex'
-let g:vimtex_view_method='general'
-let g:vimtex_view_general_viewer='/usr/local/bin/mupdf-x11'
-let g:vimtex_quickfix_mode=0
-set conceallevel=1
-let g:tex_conceal='abdmg'
-let g:vimtex_view_general_options_latexmk='-reuse-instance'
+let g:vimtex_view_method='zathura'
+"let g:vimtex_quickfix_mode=0
+"set conceallevel=1
+"let g:tex_conceal='abdmg'
 
 nnoremap tt  :edit<Space>
 nnoremap td  :bp <BAR> bd #<CR>
