@@ -81,7 +81,7 @@ autocmd FileType prolog  map <buffer> <F9>  :wa <C-v><C-j> !swipl %:p <CR>
 autocmd FileType perl    map <buffer> <F9>  :wa <C-v><C-j> !perl % <CR>
 autocmd FileType python    map <buffer> <F9>  :wa <C-v><C-j> !python % <CR>
 
-"File-specific indentations here
+"File-specific settings here
 autocmd FileType haskell setlocal shiftwidth=4 tabstop=4 expandtab
 autocmd FileType asm setlocal shiftwidth=4 tabstop=4 expandtab
 
