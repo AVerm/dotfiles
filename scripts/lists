@@ -6,7 +6,7 @@ LISTDIR="$HOME/Documents/lists"
 # need to be under LISTDIR
 LISTTEMPLATE="$LISTDIR/.template.md"
 # Set editor if it is somehow unset so far
-: $ {EDITOR="vim"}
+: ${EDITOR="vim"}
 
 # If the variable has non-zero length
 if [ -n "$1" ]; then
