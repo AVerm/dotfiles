@@ -22,7 +22,6 @@ if [ -n "$1" ]; then
 	if [ ! -f "$FILENAME" ]; then
 		touch "$FILENAME"
 		# AND a template can be used to build it
-		echo "$LISTTEMPLATE"
 		if [ -f "$LISTTEMPLATE" ]; then
 			# Fill it from the template
 			cat "$LISTTEMPLATE" > "$FILENAME"
