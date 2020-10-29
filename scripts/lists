@@ -31,11 +31,8 @@ if [ -n "$1" ]; then
 	"$EDITOR" "$FILENAME"
 # If no arguments were provided
 else
-	# Following this: https://stackoverflow.com/a/18887210
-	shopt -s nullglob
 	# Get files in list directory
-	FILES=($LISTDIR/*)
-	shopt -u nullglob
+	FILES=$(ls -1 "$LISTDIR")
 	# If the directory is empty
 	if [ ${#FILES[@]} -eq 0 ]; then
 		# Warn user
@@ -46,7 +43,7 @@ else
 		echo "Choose a list to edit:"
 		select FILENAME in $FILES ; do
 			# Open in editor
-			"$EDITOR" "$FILENAME"
+			"$EDITOR" "$LISTDIR/$FILENAME"
 			# Without this line, goes back into
 			# selection after finished editing
 			break
