@@ -3,7 +3,6 @@
 # Include defaults from /usr/share/X11/locale/en_US.UTF-8/Compose
 include "%L"
 
-<Multi_key> <equal> <equal>             : "–"
 <Multi_key> <equal> <asciitilde>        : "≈"
 <Multi_key> <asciitilde> <asciitilde>   : "≈"
 <Multi_key> <p> <r> <o> <p>		: "∝"
@@ -31,6 +30,8 @@ include "%L"
 <Multi_key> <e> <x> <i> <s> <t> <s>	: "∃" # U2203 THERE EXISTS
 <Multi_key> <0> <0>			: "∞" # U+221E ∞ INFINITY
 <Multi_key> <x> <o> <r>			: "⊕" # U+2295 CIRCLED PLUS
+<Multi_key> <equal> <equal> <equal>	: "≡" # U+2261 IDENTICAL TO (HTML &#8801;, &Congruent;, &equiv;)
+<Multi_key> <o> <k>			: "🆗" # U+1F197 SQUARED OK
 
 # ~/.XCompose
 
