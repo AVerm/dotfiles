@@ -8,7 +8,7 @@ alias agpl='curl https://www.gnu.org/licenses/agpl-3.0.txt | head -n 617 > LICEN
 alias CAPSOFF="python -c 'from ctypes import *; X11 = cdll.LoadLibrary(\"libX11.so.6\"); display = X11.XOpenDisplay(None); X11.XkbLockModifiers(display, c_uint(0x0100), c_uint(2), c_uint(0)); X11.XCloseDisplay(display)'"
 alias youtube-audio="mpv --no-video"
 alias psql="sudo -u postgres psql"
-alias cleanname="PWD=.../`basename $(pwd)`"
+alias cleanname="PWD=.../`basename \"$(pwd)\"`"
 alias cdtemp="cd `mktemp -d`"
 alias histogram="sort $1 | uniq -c | sort -nr"
 alias entropy="cat /proc/sys/kernel/random/entropy_avail"
