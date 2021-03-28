@@ -150,3 +150,6 @@ set -o vi
 
 # Add programs that are not already installed that I have stored in my application folder
 PATH="$PATH:$HOME/Applications/Launchers"
+
+# Add updated texlive distribution to path
+PATH=/usr/local/texlive/2020/bin/x86_64-linux:$PATH
