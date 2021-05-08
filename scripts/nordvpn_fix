@@ -1,0 +1,17 @@
+#!/bin/bash
+
+REGION="United_States Miami"
+
+reconnect() {
+	timeout 5s nordvpn disconnect
+	timeout 5s nordvpn connect $REGION
+}
+
+services() {
+	systemctl restart nordvpn.service && \
+	systemctl restart nordvpnd.service
+}
+
+services
+sleep 30
+reconnect
