@@ -1,2 +1,3 @@
 set revert-all-at-newline on
 Control-l: clear-screen
+set completion-ignore-case on
