@@ -11,6 +11,12 @@
 	margin-bottom: 21px !important;
 }
 
+/*
+// Get rid of only the tabs, allow other items in the tab toolbar
+#tabbrowswer-tabs {
+	visibility: collapse;
+}
+/*
 /* Get rid of the header on the TreeStyleTabs extension sidebar  */
 #sidebar-box[sidebarcommand="treestyletab_piro_sakura_ne_jp-sidebar-action"] #sidebar-header {
 	visibility: collapse !important;
