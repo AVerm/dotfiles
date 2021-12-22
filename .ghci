@@ -1,2 +1,8 @@
-:set prompt "λ> "
-:set prompt2 " | "
+-- Set prompts
+:set prompt "\ESC[38;5;51m\STXλ\ESC[m\STX> "
+:set prompt-cont " | "
+-- command shortcuts
+:def hlint const . return $ ":! hlint \"src\""
+:def hoogle \s -> return $ ":! hoogle --count=15 \"" ++ s ++ "\""
+-- Better errors
+:set -ferror-spans -freverse-errors -fprint-expanded-synonyms

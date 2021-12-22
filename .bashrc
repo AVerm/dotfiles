@@ -129,10 +129,8 @@ if [ -d "$HOME/.cargo/bin" ] ; then
 fi
 
 # Setup for Haskell
-#if [ -d "$HOME/.cabal/bin:/opt/cabal/1.22/bin:/opt/ghc/7.10.3/bin" ] ; then
-	#PATH="$PATH:$HOME/.cabal/bin:/opt/cabal/1.22/bin:/opt/ghc/7.10.3/bin"
-if [ -d "$HOME/.cabal/bin" ] ; then
-	PATH="$PATH:$HOME/.cabal/bin"
+if [ -d "$HOME/.ghcup/bin" ] ; then
+	PATH="$PATH:$HOME/.ghcup/bin"
 fi
 
 # Setup for Kotlin
