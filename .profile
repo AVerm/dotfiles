@@ -21,7 +21,7 @@ PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 
 # load the keyboard definitions
 XKBDIR="$HOME/.xkb"
-XKBMAPFILE="$XKBDIR/keymap/my_configuration"
+XKBMAPFILE="$XKBDIR/keymap/customizations.xkb"
 # DISPLAY should be defined at this point by X.
 # The POSIX pattern removal %%.* removes a trailing "." followed by
 # any number of characters from the DISPLAY value.
