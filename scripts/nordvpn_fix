@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REGION="United_States Miami"
+REGION="United_States"
 
 reconnect() {
 	timeout 5s nordvpn disconnect
@@ -8,8 +8,8 @@ reconnect() {
 }
 
 services() {
-	systemctl restart nordvpn.service && \
-	systemctl restart nordvpnd.service
+	sudo systemctl restart nordvpn.service && \
+	sudo systemctl restart nordvpnd.service
 }
 
 services
