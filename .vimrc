@@ -34,7 +34,8 @@ set lazyredraw
 "set undofile
 set t_Co=256
 set background=dark
-colorscheme thaumaturge
+"colorscheme thaumaturge
+colorscheme deus
 let g:thaumaturge_termcolors=256
 " set clipboard^=unnamed " Use system clipboard for yank and paste
 "Turn on English spellcheck
