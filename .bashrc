@@ -134,7 +134,7 @@ if [ -d "$HOME/.ghcup/bin" ] ; then
 fi
 
 # Setup for Kotlin
-if [ -d "$HOME/.cargo/bin" ] ; then
+if [ -d "$HOME/.kotlinc/bin" ] ; then
 	PATH="$HOME/.kotlinc/bin:$PATH"
 fi
 
