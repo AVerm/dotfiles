@@ -3,15 +3,15 @@
 REGION="United_States"
 
 reconnect() {
-	timeout 5s nordvpn disconnect
-	timeout 5s nordvpn connect $REGION
+	timeout 10s nordvpn disconnect
+	timeout 10s nordvpn connect $REGION
 }
 
 services() {
-	sudo systemctl restart nordvpn.service && \
+	sudo systemctl restart nordvpn.service
 	sudo systemctl restart nordvpnd.service
 }
 
 services
-sleep 30
+sleep 10
 reconnect
