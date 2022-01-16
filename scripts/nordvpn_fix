@@ -12,6 +12,7 @@ services() {
 	sudo systemctl restart nordvpnd.service
 }
 
+sudo iptables --flush
 services
 sleep 10
 reconnect
