@@ -8,6 +8,8 @@ reconnect() {
 }
 
 services() {
+	sudo pkill -f nordvpn
+	sudo pkill -f nordvpnd
 	sudo systemctl restart nordvpn.service
 	sudo systemctl restart nordvpnd.service
 }
