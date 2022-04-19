@@ -1,0 +1,7 @@
+#!/bin/bash
+
+dbg_exec() {
+	ARGS=["@*"]
+	echo "EXEC: \'${ARGS[*]}\'"
+	${ARGS[*]}
+}
