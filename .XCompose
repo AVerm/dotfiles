@@ -32,6 +32,7 @@ include "%L"
 <Multi_key> <x> <o> <r>			: "⊕" # U+2295 CIRCLED PLUS
 <Multi_key> <equal> <equal> <equal>	: "≡" # U+2261 IDENTICAL TO (HTML &#8801;, &Congruent;, &equiv;)
 <Multi_key> <o> <k>			: "🆗" # U+1F197 SQUARED OK
+<Multi_key> <n> <e> <g>			: "¬" # U+00AC NOT SIGN
 
 # ~/.XCompose
 
@@ -1164,7 +1165,7 @@ include "/usr/share/X11/locale/en_US.UTF-8/Compose"
 		# As for the emoji... We can't possibly get all of them, even just all of the
 		# cool/useful ones.  Maybe we can pick and choose some high-fliers.
 
-		<Multi_key> <Multi_key> <d> <e> <g> <r> <e> <e> 		: "°"	U00B0	# DEGREE SIGN
+		<Multi_key> <d> <e> <g> <g>				: "°"	U00B0	# DEGREE SIGN
 		<Multi_key> <Multi_key> <d> <e> <g> <C> 		: "℃"   U2103 	# DEGREE CELSIUS
 		<Multi_key> <Multi_key> <d> <e> <g> <c> 		: "℃"   U2103 	# DEGREE CELSIUS
 		<Multi_key> <Multi_key> <d> <e> <g> <F> 		: "℉"   U2109   # DEGREE FAHRENHEIT
