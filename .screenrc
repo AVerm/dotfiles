@@ -8,6 +8,8 @@ startup_message off
 mousetrack off
 # Use full color support
 term screen-256color
+# Turn on 'background color erase' (Make vim work)
+defbce on
 
 # Hotkeys
 bind ',' prev
