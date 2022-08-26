@@ -4,15 +4,20 @@ REGION="United_States"
 
 reconnect() {
 	timeout 10s nordvpn disconnect
-	timeout 10s nordvpn connect $REGION
+	timeout 10s nordvpn connect #$REGION
 }
 
 services() {
-	sudo pkill -f nordvpn
+	# In current formulation, this line would kill the script as well
+	#sudo pkill -f nordvpn
 	sudo pkill -f nordvpnd
-	sudo systemctl restart nordvpn.service
-	sudo systemctl restart nordvpnd.service
+	timeout 10s sudo systemctl restart nordvpn.service
+	timeout 10s sudo systemctl restart nordvpnd.service
+	timeout 10s sudo systemctl restart nordvpnd.socket
 }
+
+sudo dhclient -r
+sudo dhclient
 
 sudo iptables --flush
 services
