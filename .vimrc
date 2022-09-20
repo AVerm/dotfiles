@@ -97,6 +97,9 @@ autocmd FileType markdown map <buffer> k gk
 autocmd FileType tex map <buffer> j gj
 autocmd FileType tex map <buffer> k gk
 autocmd FileType markdown set textwidth=65
+autocmd FileType javascript set ts=2 sw=2 sts=2 et
+
+autocmd BufRead,BufNewFile *.cabal setlocal expandtab
 
 "Add utility command for hex-editing files
 :command Hex %!xxd
