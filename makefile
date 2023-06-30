@@ -20,7 +20,8 @@ cron: $(CRONFILE) # To set up crontab, run this command
 
 .PHONY: keyboardsettings # Not a real file target
 keyboardsettings: .xkb # To set up keyboard for gnome
-	ln $(LINKTYPE) ~/dotfiles/.xkb/symbols/cusomizations.xkb /usr/share/X11/xkb
+	sudo rm -rf /usr/share/X11/xkb/my_configuration
+	sudo ln $(LINKTYPE) ~/dotfiles/.xkb/symbols/my_configuration /usr/share/X11/xkb
 	#ln $(LINKTYPE) ~/dotfiles/.xkb/keymap /usr/share/X11/
 	gsettings set org.gnome.settings-daemon.plugins.keyboard active false # Needed so that xkb settings not overwritten by gnome
 
