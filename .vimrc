@@ -17,7 +17,9 @@ Plugin 'lervag/vimtex'
 Plugin 'baines/vim-colorscheme-thaumaturge'
 Plugin 'ajmwagar/vim-deus'
 Plugin 'altercation/vim-colors-solarized'
-Plugin 'vim-syntastic/syntastic'
+" Other Stuff
+"Plugin 'vim-syntastic/syntastic'
+Plugin 'tidalcycles/vim-tidal'
 call vundle#end()
 filetype plugin indent on
 
