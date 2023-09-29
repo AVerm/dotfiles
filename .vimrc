@@ -86,6 +86,7 @@ autocmd FileType python    map <buffer> <F9>  :wa <C-v><C-j> !python % <CR>
 "File-specific settings here
 autocmd FileType haskell setlocal shiftwidth=4 tabstop=4 expandtab
 autocmd FileType asm setlocal shiftwidth=4 tabstop=4 expandtab
+autocmd FileType scheme setlocal shiftwidth=2 tabstop=2 expandtab
 
 "Turn on English spellcheck in text files along with linewrapping
 autocmd BufRead,BufNewFile *.md,*.txt,*.tex setlocal wrap linebreak nolist spell spelllang=en_us
