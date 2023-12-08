@@ -13,3 +13,5 @@
 	autosetuprebase = always
 [alias]
 	s = status
+[init]
+	defaultBranch = master
