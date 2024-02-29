@@ -1,0 +1,72 @@
+#!/bin/bash
+
+function boxify {
+	max_length='0'
+	# Fixing files with no terminal newline
+	# Source: https://stackoverflow.com/a/12916758
+	while IFS= read -r line || [ -n "$line" ]
+	do
+		this_length=$(($(echo "$line" | wc -c) - 1))
+		if [ "$this_length" -gt "$max_length" ]; then
+			max_length="$this_length"
+		fi
+	# Guard against empty input using printf
+	done <<< $(printf '%s\n' "$@")
+
+	# ┌─────────╖
+	printf '┌─'
+	for _ in $(seq 1 "$max_length")
+	do
+		printf '─'
+	done
+	printf '─╖\n'
+
+	while IFS= read -r line || [ -n "$line" ]
+	do
+		case "$line" in
+			# ├─────────╢
+			'---')
+				printf '├─'
+				for _ in $(seq 1 "$max_length")
+				do
+					printf '─'
+				done
+				printf '─╢\n'
+				;;
+			# ╞═════════╣
+			'===')
+				printf '╞═'
+				for _ in $(seq 1 "$max_length")
+				do
+					printf '═'
+				done
+				printf '═╣\n'
+				;;
+			# │ Example ║
+			*)
+				printf "│ %-${max_length}s ║\n" "${line}"
+				;;
+		esac
+	done <<< $(printf '%s\n' "$@")
+
+	# ╘═════════╝
+	printf '╘═'
+	for _ in $(seq 1 "$max_length")
+	do
+		printf '═'
+	done
+	printf '═╝\n'
+}
+
+# $ boxify 'a' 'bbbb' '---' 'c' '    d' '===' 'f'
+# ┌────────╖
+# │ a      ║
+# │ bbbb   ║
+# ├────────╢
+# │ c      ║
+# │     d  ║
+# ╞════════╣
+# │ f      ║
+# ╘════════╝
+
+boxify "$@"
