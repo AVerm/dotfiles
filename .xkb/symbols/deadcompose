@@ -1,0 +1,5 @@
+// Caps is Compose, Shift+Caps is DeadGreek
+partial modifier_keys
+xkb_symbols "redefine_capslock" {
+    key <CAPS> { [ Multi_key, dead_greek ] };
+};

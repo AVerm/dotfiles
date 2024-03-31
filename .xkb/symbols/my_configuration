@@ -1,3 +1,0 @@
-xkb_symbols "redefine_capslock" {
-    replace key <CAPS> { [ Multi_key, dead_greek ] };
-};

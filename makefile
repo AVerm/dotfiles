@@ -20,10 +20,13 @@ cron: $(CRONFILE) # To set up crontab, run this command
 
 .PHONY: keyboardsettings # Not a real file target
 keyboardsettings: .xkb # To set up keyboard for gnome
-	sudo rm -rf /usr/share/X11/xkb/my_configuration
-	sudo ln $(LINKTYPE) ~/dotfiles/.xkb/symbols/my_configuration /usr/share/X11/xkb
+	sudo rm -rf /usr/share/X11/xkb/deadcompose
+	sudo ln $(LINKTYPE) ~/dotfiles/.xkb/symbols/deadcompose /usr/share/X11/xkb/symbols/
+	echo 'Follow this tutorial to finish setting up your keyboard'
+	echo 'https://askubuntu.com/questions/501659/how-to-swap-command-and-control-keys-with-xkb-step-by-step'
 	#ln $(LINKTYPE) ~/dotfiles/.xkb/keymap /usr/share/X11/
-	gsettings set org.gnome.settings-daemon.plugins.keyboard active false # Needed so that xkb settings not overwritten by gnome
+	# This key doesn't exist anymore so this doesn't do anything
+	#gsettings set org.gnome.settings-daemon.plugins.keyboard active false # Needed so that xkb settings not overwritten by gnome
 
 userchrome:
 	echo "Don't forget to set up your userChrome.css!"
