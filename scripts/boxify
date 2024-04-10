@@ -6,7 +6,7 @@ function boxify {
 	# Source: https://stackoverflow.com/a/12916758
 	while IFS= read -r line || [ -n "$line" ]
 	do
-		this_length=$(($(echo "$line" | wc -c) - 1))
+		this_length=$(($(echo "$line" | wc -m) - 1))
 		if [ "$this_length" -gt "$max_length" ]; then
 			max_length="$this_length"
 		fi
@@ -15,10 +15,7 @@ function boxify {
 
 	# ┌─────────╖
 	printf '┌─'
-	for _ in $(seq 1 "$max_length")
-	do
-		printf '─'
-	done
+	printf "%${max_length}s" '' | sed 's/ /─/g'
 	printf '─╖\n'
 
 	while IFS= read -r line || [ -n "$line" ]
@@ -27,34 +24,27 @@ function boxify {
 			# ├─────────╢
 			'---')
 				printf '├─'
-				for _ in $(seq 1 "$max_length")
-				do
-					printf '─'
-				done
+				printf "%${max_length}s" '' | sed 's/ /─/g'
 				printf '─╢\n'
 				;;
 			# ╞═════════╣
 			'===')
 				printf '╞═'
-				for _ in $(seq 1 "$max_length")
-				do
-					printf '═'
-				done
+				printf "%${max_length}s" '' | sed 's/ /═/g'
 				printf '═╣\n'
 				;;
 			# │ Example ║
 			*)
-				printf "│ %-${max_length}s ║\n" "${line}"
+				this_length=$(($(echo "$line" | wc -m) - 1))
+				needed=$(( "${max_length}" - "${this_length}" ))
+				printf "│ %s%${needed}s ║\n" "${line}" ''
 				;;
 		esac
 	done <<< $(printf '%s\n' "$@")
 
 	# ╘═════════╝
 	printf '╘═'
-	for _ in $(seq 1 "$max_length")
-	do
-		printf '═'
-	done
+	printf "%${max_length}s" '' | sed 's/ /═/g'
 	printf '═╝\n'
 }
 
