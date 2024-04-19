@@ -51,6 +51,7 @@ include "%L"
 # Plus, Minus, Times, Equals(?)
 # <Multi_key> <backslash> <minus>		: "­"	U00AD		# SOFT HYPHEN
 # Cyrllic novelty o characters
+# Check out the U2200 "Mathematical operators" block
 
 
 ### Based on the en_US.UTF locale. ###
