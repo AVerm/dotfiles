@@ -36,6 +36,20 @@ include "%L"
 
 # ~/.XCompose
 
+# <Multi_key> <m> <minus>		: "—" #	U2014 EM DASH
+# <Multi_key> <n> <minus>		: "–" #	U2013 EN DASH
+# copyright, registered trademark, trademark, nonbreaking space
+# (Consider automatic nbsp after (c/tm/r)
+# Ellipsis
+# Angled single and double quotes (don't add to layout unless a writing layout (non-code) is created)
+# Apostrophe & Okina
+# Accenting characters (éèöêñ…)
+# Foot and inch marks (though not common in professional fonts?)
+# Thin space
+# May not exist: Hard line break? Hard page break? Optional hyphen?
+# Plus, Minus, Times, Equals(?)
+# <Multi_key> <backslash> <minus>		: "­"	U00AD		# SOFT HYPHEN
+# Cyrllic novelty o characters
 
 
 ### Based on the en_US.UTF locale. ###
