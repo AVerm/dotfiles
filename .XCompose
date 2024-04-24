@@ -444,6 +444,7 @@ include "/usr/share/X11/locale/en_US.UTF-8/Compose"
 <Multi_key> <L> <R> <M>			: "‎"	U200E	# LEFT-TO-RIGHT MARK
 <Multi_key> <R> <L> <M>			: "‏"	U200F	# RIGHT-TO-LEFT MARK
 # I never understood the whole embedding/pop thing, but we might as well add 'em
+# https://www.dotancohen.com/howto/rtl_right_to_left.html
 <Multi_key> <L> <R> <E>			: "‪"	U202A	# LEFT-TO-RIGHT EMBEDDING
 <Multi_key> <R> <L> <E>			: "‫"	U202B	# RIGHT-TO-LEFT EMBEDDING
 <Multi_key> <P> <D> <F>			: "‬"	U202C	# POP DIRECTIONAL FORMATTING
@@ -557,8 +558,8 @@ include "/usr/share/X11/locale/en_US.UTF-8/Compose"
 # cool/useful ones.  Maybe we can pick and choose some high-fliers.
 
 <Multi_key> <d> <e> <g> <g>		: "°"	U00B0	# DEGREE SIGN
-<Multi_key> <d> <e> <g> <C> 		: "℃"   U2103 	# DEGREE CELSIUS
-<Multi_key> <d> <e> <g> <F> 		: "℉"   U2109   # DEGREE FAHRENHEIT
+<Multi_key> <d> <e> <g> <c> 		: "℃"   U2103 	# DEGREE CELSIUS
+<Multi_key> <d> <e> <g> <f> 		: "℉"   U2109   # DEGREE FAHRENHEIT
 
 <Multi_key> <parenleft> <1> <colon> <0> <0> <parenright> : "🕐" U1F550 # CLOCK FACE ONE OCLOCK
 <Multi_key> <parenleft> <2> <colon> <0> <0> <parenright> : "🕑" U1F551 # CLOCK FACE TWO OCLOCK
