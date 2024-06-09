@@ -71,3 +71,8 @@ mkcd() {
 	DIRNAME="$1"
 	mkdir --parents "$DIRNAME" && cd "$DIRNAME"
 }
+
+matchwords() {
+	NEEDLE="$1"
+	grep -e "${NEEDLE}" /usr/share/dict/words
+}
