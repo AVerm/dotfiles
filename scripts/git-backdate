@@ -1,8 +1,10 @@
 #!/bin/bash
 
 FIRSTFILE="$1"
-ALLFILES="$@"
+#ALLFILES="$@"
 
-git add $ALLFILES \
+DATE=$(stat --format="%y" "${FIRSTFILE}")
+
+git add "$@" \
 && git commit \
-	--date="$(stat --format="%y" $FIRSTFILE)"
+	"--date=$DATE"
