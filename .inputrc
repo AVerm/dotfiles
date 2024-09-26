@@ -1,3 +1,8 @@
 set revert-all-at-newline on
 Control-l: clear-screen
 set completion-ignore-case on
+
+$if mit-scheme
+  "\C-c" rlwrap-direct-keypress
+  "\C-g" rlwrap-direct-keypress
+$endif
