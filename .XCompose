@@ -33,11 +33,13 @@ include "%L"
 <Multi_key> <colon> <colon> 		: "̈" # U0308 COMBINING DIAERESIS
 <Multi_key> <0> <equal> 		: "‍" # U200D ZERO WIDTH JOINER
 <Multi_key> <0> <space> 		: "​" # U200B ZERO WIDTH SPACE
+<Multi_key> <plus> <space> 		: " " # U00A0 NO-BREAK SPACE (NBSP)
 <Multi_key> <grave> <grave>		: "“" # U201C LEFT DOUBLE QUOTATION MARK
 <Multi_key> <quotedbl> <quotedbl>	: "”" # U201D RIGHT DOUBLE QUOTATION MARK
 <Multi_key> <d> <a> <g>			: "†"	U2020		# DAGGER
 <Multi_key> <d> <d> <a> <g>		: "‡"	U2021		# DOUBLE DAGGER
-<Multi_key> <s> <e> <c>			: "§"   U00A7   # SECTION SIGN
+<Multi_key> <s> <e> <c>			: "§ "   U00A7   # SECTION SIGN
+<Multi_key> <p> <a> <r> <a>		: "¶ "   U00A7   # SECTION SIGN
 
 ## UTILITY
 <Multi_key> <b> <l> <a> <n> <k>         : "␣" # BLANK SPACE CHARACTER
@@ -54,8 +56,8 @@ include "%L"
 
 # ~/.XCompose
 
-# <Multi_key> <m> <minus>		: "—" #	U2014 EM DASH
-# <Multi_key> <n> <minus>		: "–" #	U2013 EN DASH
+<Multi_key> <m> <minus>		: "—" #	U2014 EM DASH
+<Multi_key> <n> <minus>		: "–" #	U2013 EN DASH
 # copyright, registered trademark, trademark, nonbreaking space
 # (Consider automatic nbsp after (c/tm/r)
 # Ellipsis
