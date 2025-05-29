@@ -107,3 +107,7 @@ autocmd BufRead,BufNewFile *.cabal setlocal expandtab
 "Add utility command for hex-editing files
 :command Hex %!xxd
 :command Unhex %!xxd -r
+
+" Supercharge :set list
+" From https://askubuntu.com/a/1044625
+set listchars=tab:→\ ,space:·,nbsp:␣,trail:•,eol:¶,precedes:«,extends:»
