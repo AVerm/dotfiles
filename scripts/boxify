@@ -4,25 +4,25 @@ function boxify {
 	max_length=$(printf '%s\n' "$@" | sed -e 's/---//' -e 's/===//' | wc -L)
 
 	#spaces=$(printf "%${max_length}s" '')
-	single=$(printf "%${max_length}s" '' | sed -e 's/ /─/g')
-	double=$(printf "%${max_length}s" '' | sed -e 's/ /═/g')
+	inside_single=$(printf "%${max_length}s" '' | sed -e 's/ /─/g')
+	inside_double=$(printf "%${max_length}s" '' | sed -e 's/ /═/g')
 
-	mid_single=$(printf "├─${single}─╢")
-	mid_double=$(printf "╞═${double}═╣")
+	middle_single=$(printf "├─${inside_single}─╢")
+	mid_double=$(printf "╞═${inside_double}═╣")
 
 	# ┌─────────╖
-	printf "┌─${single}─╖\n"
+	printf "┌─${inside_single}─╖\n"
 
 	while IFS= read -r line || [ -n "$line" ]
 	do
 		case "$line" in
 			# ├─────────╢
 			'---')
-				printf "$mid_single\n"
+				printf "$middle_single\n"
 				;;
 			# ╞═════════╣
 			'===')
-				printf "$mid_double\n"
+				printf "$middle_double\n"
 				;;
 			# │ Example ║
 			*)
@@ -35,7 +35,7 @@ function boxify {
 	done <<< $(printf '%s\n' "$@")
 
 	# ╘═════════╝
-	printf "╘═${double}═╝\n"
+	printf "╘═${inside_double}═╝\n"
 }
 
 # $ boxify 'a' 'bbbb' '---' 'c' '    d' '===' 'f'
