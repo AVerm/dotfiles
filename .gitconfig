@@ -15,3 +15,14 @@
 	s = status
 [init]
 	defaultBranch = master
+
+# 1Password git signing key
+# Linked to github @AVerm
+[user]
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBPMPq1BDieZ9s8bavAiiSy1izs+KMzqvxjZNFhfPfne
+[gpg]
+  format = ssh
+[gpg "ssh"]
+  program = "/opt/1Password/op-ssh-sign"
+[commit]
+  gpgsign = true
