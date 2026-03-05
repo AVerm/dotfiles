@@ -27,6 +27,38 @@
 	collapsed="false"
 }
 
+/* Remove unneeded options from right-click menu */
+/* Email Image… */
+menuitem#context-sendimage,
+menuseparator#context-sep-setbackground,
+/* Set Image as Desktop Background… */
+menuitem#context-setDesktopBackground,
+/* Print Selection… */
+menuitem#context-print-selection,
+/* Take Screenshot */
+menuitem#context-take-screenshot,
+menuseparator#context-sep-screenshots,
+/* Search [search] for [selection] */
+menuitem#context-searchselect,
+/* Translate selection to [language] */
+menuitem#context-translate-selection,
+
+/* Needed because the placement of separators flips here */
+menuseparator#context-sep-highlights,
+
+/* View Selection Source */
+menuitem#context-viewpartialsource-selection,
+/* Inspect Accessibility Properties */
+menuitem#context-inspect-a11y,
+
+menu.menu-iconic#_testpilot-containers-menuitem-0,
+menu.menu-iconic[label="1Password – Password Manager"],
+menuitem.menuitem-iconic#ublock0_raymondhill_net-menuitem-_uBlock0-blockElement,
+contentAreaContextMenu > menuseparator:last-child
+{
+	display: none;
+}
+
 /* This was used in an old version of this file with above open brance
 }
 */
