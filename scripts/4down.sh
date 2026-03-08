@@ -44,38 +44,42 @@ downloadThread() {
 	  "$threadURL" --show-progress
 }
 
-# Main execution
-echo "(Upgraded)                        Cipher's 4chan thread download tool"
-printf "
-  / // / ____/ /___ _      ______
- / // /_/ __  / __ \\ | /| / / __ \\
-/__  __/ /_/ / /_/ / |/ |/ / / / /
-  /_/  \\____/\\____/|__/|__/_/ /_/
-" | cat
+main() {
+	# Main execution
+	echo "(Upgraded)                        Cipher's 4chan thread download tool"
+	printf "
+	  / // / ____/ /___ _      ______
+	 / // /_/ __  / __ \\ | /| / / __ \\
+	/__  __/ /_/ / /_/ / |/ |/ / / / /
+	  /_/  \\____/\\____/|__/|__/_/ /_/
+	" | cat
 
-echo "As a note you should also have cd'd into the directory where you want all of these contents to download to" | cat
-echo "Enter the URL of the thread that you want to download: " | cat
-read -p "" threadURL
+	echo "As a note you should also have cd'd into the directory where you want all of these contents to download to" | cat
+	echo "Enter the URL of the thread that you want to download: " | cat
+	read -p "" threadURL
 
-# Extracting board name and thread number from URL
-threadURLStripped="${threadURL#https://boards.4channel.org}"
-threadURLStripped="${threadURLStripped#https://boards.4chan.org}"
-threadURLStripped="${threadURLStripped//thread/}"
-threadURLStripped="${threadURLStripped///}"
-boardName="${threadURLStripped//[0-9]/}"
+	# Extracting board name and thread number from URL
+	threadURLStripped="${threadURL#https://boards.4channel.org}"
+	threadURLStripped="${threadURLStripped#https://boards.4chan.org}"
+	threadURLStripped="${threadURLStripped//thread/}"
+	threadURLStripped="${threadURLStripped///}"
+	boardName="${threadURLStripped//[0-9]/}"
 
-threadNumStripped="${threadURL#https://boards.4channel.org}"
-threadNumStripped="${threadNumStripped#https://boards.4chan.org}"
-threadNumStripped="${threadNumStripped//thread/}"
-threadNumStripped="${threadNumStripped///}"
-threadNumber="${threadNumStripped//[!0-9]/}"
+	threadNumStripped="${threadURL#https://boards.4channel.org}"
+	threadNumStripped="${threadNumStripped#https://boards.4chan.org}"
+	threadNumStripped="${threadNumStripped//thread/}"
+	threadNumStripped="${threadNumStripped///}"
+	threadNumber="${threadNumStripped//[!0-9]/}"
 
-showUrlParts
+	showUrlParts
 
-WGET_HEADERS=(--header "User-Agent: ${USERAGENT}" --header 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' --header 'Accept-Language: en-US,en;q=0.5' --header 'Accept-Encoding: gzip, deflate, br, zstd' --header 'DNT: 1' --header 'Sec-GPC: 1' --header 'Connection: keep-alive' --header "Cookie: ${COOKIE}" --header 'Upgrade-Insecure-Requests: 1' --header 'Sec-Fetch-Dest: document' --header 'Sec-Fetch-Mode: navigate' --header 'Sec-Fetch-Site: same-origin' --header 'Sec-Fetch-User: ?1' --header 'Priority: u=0, i')
+	WGET_HEADERS=(--header "User-Agent: ${USERAGENT}" --header 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' --header 'Accept-Language: en-US,en;q=0.5' --header 'Accept-Encoding: gzip, deflate, br, zstd' --header 'DNT: 1' --header 'Sec-GPC: 1' --header 'Connection: keep-alive' --header "Cookie: ${COOKIE}" --header 'Upgrade-Insecure-Requests: 1' --header 'Sec-Fetch-Dest: document' --header 'Sec-Fetch-Mode: navigate' --header 'Sec-Fetch-Site: same-origin' --header 'Sec-Fetch-User: ?1' --header 'Priority: u=0, i')
 
-mkdir "${threadNumber}" && pushd "${threadNumber}" > /dev/null
+	mkdir "${threadNumber}" && pushd "${threadNumber}" > /dev/null
 
-downloadContent
+	downloadContent
 
-popd > /dev/null
+	popd > /dev/null
+}
+
+main
