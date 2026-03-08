@@ -8,6 +8,9 @@ WGET_OPTS=("--quiet")
 
 USERAGENT='Mozilla/5.0 (X11; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0'
 COOKIE=''
+if [ -e "${HOME}/scripts/4down_cookie.sh" ]; then
+	source "${HOME}/scripts/4down_cookie.sh"
+fi
 
 # Functions
 
