@@ -20,31 +20,31 @@ show_and_run() {
 }
 
 showUrlParts() {
-  echo "Thread URL is: $threadURL"
-  echo "Board name is: $boardName"
-  echo "Thread number is: $threadNumber"
+	echo "Thread URL is: $threadURL"
+	echo "Board name is: $boardName"
+	echo "Thread number is: $threadNumber"
 }
 
 downloadContent() {
-  echo "downloadContent function executed"
+	echo "downloadContent function executed"
 
-	  #-A "html,css,jpg,jpeg,png,webp,gif,webm,mp4,mp3,m4a" -R "*s.jpg,*s.jpeg,*s.png,*s.webp" \
-  # Use wget to download only full-size images and videos, avoiding the 's' versions.
-  show_and_run wget "${WGET_OPTS[@]}" "${WGET_HEADERS[@]}" --recursive --convert-links --compression gzip --domains 'i.4cdn.org' \
-	  --header "Referer: ${threadURL}" \
-	  -np -nH -nd \
-	  -e robots=off \
-	  -A "html,css,jpg,jpeg,png,webp,gif,webm,mp4,mp3,m4a" \
-	  -H "${threadURL}/index.html" --show-progress
+	#-A "html,css,jpg,jpeg,png,webp,gif,webm,mp4,mp3,m4a" -R "*s.jpg,*s.jpeg,*s.png,*s.webp" \
+	# Use wget to download only full-size images and videos, avoiding the 's' versions.
+	show_and_run wget "${WGET_OPTS[@]}" "${WGET_HEADERS[@]}" --recursive --convert-links --compression gzip --domains 'i.4cdn.org' \
+		--header "Referer: ${threadURL}" \
+		-np -nH -nd \
+		-e robots=off \
+		-A "html,css,jpg,jpeg,png,webp,gif,webm,mp4,mp3,m4a" \
+		-H "${threadURL}/index.html" --show-progress
 }
 
 downloadThread() {
-  echo "downloadThread function executed"
+	echo "downloadThread function executed"
 
-  show_and_run wget "${WGET_OPTS[@]}" "${WGET_HEADERS[@]}" \
-	  --header "Referer: https://boards.4chan.org/${boardName}/" \
-	  -m -l 3 -nd -np -e robots=off --convert-links -w 1 \
-	  "$threadURL" --show-progress
+	show_and_run wget "${WGET_OPTS[@]}" "${WGET_HEADERS[@]}" \
+		--header "Referer: https://boards.4chan.org/${boardName}/" \
+		-m -l 3 -nd -np -e robots=off --convert-links -w 1 \
+		"$threadURL" --show-progress
 }
 
 main() {
