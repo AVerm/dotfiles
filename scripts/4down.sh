@@ -11,6 +11,7 @@ COOKIE=''
 if [ -e "${HOME}/scripts/4down_cookie.sh" ]; then
 	source "${HOME}/scripts/4down_cookie.sh"
 fi
+# TODO: Build COOKIE_OPTS to not pass options unless we have a cookie to use
 
 # Functions
 
@@ -46,10 +47,25 @@ downloadThread() {
 		-m -l 3 -nd -np -e robots=off --convert-links -w 1 \
 		"$threadURL" --show-progress
 }
+# TODO: processThread function calls downloadContent
+# TODO: processThread replaces links to thumbnails with full-size
+# TODO: processThread removes any thumbnails
+# TODO: processThread extracts title and renames directory
+
+# TODO: isThreadAlive checks if thread is still alive
+# TODO: isThreadAlive checks if a thread with appropriate URL exists
+# TODO: isThreadAlive checks if the new thread has a date matching the old thread (for recycling)
+
+# TODO: updateThread function
+# TODO: updateThread checks if thread is still alive
+# TODO: updateThread archives old thread
+# TODO: updateThread downloads new thread and images
+# TODO: updateThread merges new thread onto old thread
 
 main() {
 	# Main execution
 	echo "(Upgraded)                        Cipher's 4chan thread download tool"
+	echo "Pretty liberally modified."
 	printf "
 	  / // / ____/ /___ _      ______
 	 / // /_/ __  / __ \\ | /| / / __ \\
@@ -61,6 +77,7 @@ main() {
 	echo "Enter the URL of the thread that you want to download: " | cat
 	read -p "" threadURL
 
+	# TODO: Refactor into function
 	# Extracting board name and thread number from URL
 	threadURLStripped="${threadURL#https://boards.4channel.org}"
 	threadURLStripped="${threadURLStripped#https://boards.4chan.org}"
