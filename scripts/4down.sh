@@ -39,14 +39,6 @@ downloadContent() {
 		-H "${threadURL}/index.html" --show-progress
 }
 
-downloadThread() {
-	echo "downloadThread function executed"
-
-	show_and_run wget "${WGET_OPTS[@]}" "${WGET_HEADERS[@]}" \
-		--header "Referer: https://boards.4chan.org/${boardName}/" \
-		-m -l 3 -nd -np -e robots=off --convert-links -w 1 \
-		"$threadURL" --show-progress
-}
 # TODO: processThread function calls downloadContent
 # TODO: processThread replaces links to thumbnails with full-size
 # TODO: processThread removes any thumbnails
