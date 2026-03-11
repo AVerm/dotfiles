@@ -20,6 +20,17 @@ show_and_run() {
 	$@
 }
 
+splash_screen() {
+	echo "(Upgraded)                        Cipher's 4chan thread download tool"
+	echo "Pretty liberally modified."
+	printf "
+	  / // / ____/ /___ _      ______
+	 / // /_/ __  / __ \\ | /| / / __ \\
+	/__  __/ /_/ / /_/ / |/ |/ / / / /
+	  /_/  \\____/\\____/|__/|__/_/ /_/
+	" | cat
+}
+
 showUrlParts() {
 	echo "Thread URL is: $threadURL"
 	echo "Board name is: $boardName"
@@ -56,14 +67,8 @@ downloadContent() {
 
 main() {
 	# Main execution
-	echo "(Upgraded)                        Cipher's 4chan thread download tool"
-	echo "Pretty liberally modified."
-	printf "
-	  / // / ____/ /___ _      ______
-	 / // /_/ __  / __ \\ | /| / / __ \\
-	/__  __/ /_/ / /_/ / |/ |/ / / / /
-	  /_/  \\____/\\____/|__/|__/_/ /_/
-	" | cat
+
+	splash_screen
 
 	echo "As a note you should also have cd'd into the directory where you want all of these contents to download to" | cat
 	echo "Enter the URL of the thread that you want to download: " | cat
