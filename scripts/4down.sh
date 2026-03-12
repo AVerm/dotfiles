@@ -13,11 +13,19 @@ if [ -e "${HOME}/scripts/4down_cookie.sh" ]; then
 fi
 # TODO: Build COOKIE_OPTS to not pass options unless we have a cookie to use
 
+DEBUG_4DOWN=''
+
 # Functions
 
 show_and_run() {
 	echo "$@"
 	$@
+}
+
+debug_printf() {
+	if [ -n "${DEBUG_4DOWN}" ]; then
+		printf "$@"
+	fi
 }
 
 splash_screen() {
@@ -38,7 +46,7 @@ showUrlParts() {
 }
 
 downloadContent() {
-	echo "downloadContent function executed"
+	debug_printf "downloadContent function executed"
 
 	#-A "html,css,jpg,jpeg,png,webp,gif,webm,mp4,mp3,m4a" -R "*s.jpg,*s.jpeg,*s.png,*s.webp" \
 	# Use wget to download only full-size images and videos, avoiding the 's' versions.
