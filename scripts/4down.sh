@@ -100,7 +100,9 @@ main() {
 
 	WGET_HEADERS=(--header "User-Agent: ${USERAGENT}" --header 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' --header 'Accept-Language: en-US,en;q=0.5' --header 'Accept-Encoding: gzip, deflate, br, zstd' --header 'DNT: 1' --header 'Sec-GPC: 1' --header 'Connection: keep-alive' --header "Cookie: ${COOKIE}" --header 'Upgrade-Insecure-Requests: 1' --header 'Sec-Fetch-Dest: document' --header 'Sec-Fetch-Mode: navigate' --header 'Sec-Fetch-Site: same-origin' --header 'Sec-Fetch-User: ?1' --header 'Priority: u=0, i')
 
-	mkdir "${threadNumber}" && pushd "${threadNumber}" > /dev/null
+	download_dir="./${boardName}/${threadNumber}"
+
+	mkdir --parents "${download_dir}" && pushd "${download_dir}" > /dev/null
 
 	downloadContent
 
