@@ -1,0 +1,260 @@
+Vim operates on a grammar: operators (d, c, y) take motions or text objects as
+their "noun." Once that clicks, you stop memorizing commands and start
+composing them.
+%
+The dot command (.) repeats your last change. Design your edits to be
+repeatable and a single keystroke does the work of many.
+%
+ci" changes the contents of a double-quoted string — cursor anywhere inside it.
+ci( does the same for parentheses. You don't need to move to the delimiter first.
+%
+Text objects respect structure. diw deletes a word. daw deletes the word and
+its surrounding whitespace. The difference matters more than you'd expect.
+%
+% jumps between matching brackets, braces, and parentheses. On a lonely
+bracket with no match, it'll just sit there — much like the bracket itself.
+%
+You have 26 lowercase marks per file and 26 uppercase marks across all files.
+Set one with m{letter}. Jump to the exact position with `{letter}, or to the
+start of the line with '{letter}.
+%
+Uppercase marks (A–Z) persist across sessions. mV on your vimrc, then 'V to
+open it from anywhere, any time. No more :e ~/.vimrc.
+%
+Vim has over 30 registers. " is the unnamed register (last yank or delete).
+0 is the yank register — it holds your last yank and is not overwritten by
+deletes. Use "0p when you want what you yanked, not what you deleted.
+%
+* and + are the clipboard registers. "+y yanks to the system clipboard.
+"+p pastes from it. Your mouse doesn't have to touch the keyboard.
+%
+/ holds your last search pattern. : holds your last command. You can paste
+them into the buffer with Ctrl-R / and Ctrl-R : in insert mode.
+%
+Ctrl-R {register} in insert mode pastes any register without leaving insert
+mode. Ctrl-R " pastes the unnamed register. Ctrl-R 0 pastes your last yank.
+%
+Record a macro with q{letter}, make your changes, stop with q. Replay with
+@{letter}. Replay the last macro again with @@. Give it a count: 50@@ to run
+it fifty times.
+%
+To edit a macro, :put {letter} to dump its contents into the buffer, edit
+the text, then yank it back with "{letter}y$. Macros are just text.
+%
+Make your macros position-independent. Move to a landmark (word boundary,
+specific character) rather than pressing l seven times. A macro that depends
+on a fixed offset is a macro waiting to break.
+%
+:norm {command} runs a normal-mode command on every line in a range.
+:%norm A; appends a semicolon to every line in the file.
+%
+The :global command (:g) is a filter that runs an Ex command on every line
+matching a pattern. :g/TODO/d deletes every line containing "TODO."
+:g/pattern/p prints every matching line — a poor man's grep, already open in
+your buffer.
+%
+:g/^$/d deletes all blank lines. :g/./,/^$/-j joins each block of consecutive
+non-empty lines. :g is surprisingly powerful once you stop being afraid of it.
+%
+To search and replace interactively, use :%s/old/new/gc. The c flag prompts
+you for each match: y to replace, n to skip, a to replace all remaining.
+%
+\v in a search pattern enables "very magic" mode, where most characters have
+special meaning without backslashes. :%s/\v(foo)(bar)/\2\1/g swaps them.
+%
+gn is a text object for the current search match. cgn changes it, then . will
+find the next match and change it too. More surgical than a global replace.
+%
+n and N navigate search matches. But * searches for the exact word under your
+cursor without typing anything. # searches backward. Combine with cgn for
+precision find-and-replace.
+%
+Ctrl-O and Ctrl-I move backward and forward through your jump list —
+every position Vim considered a "jump." You can retrace your steps across
+files, not just lines.
+%
+'' (two single quotes) jumps to where you were before your last jump. A
+fast way to toggle between two distant positions in a file.
+%
+gi jumps back to where you last left insert mode and re-enters it.
+Useful when you interrupted an edit to check something elsewhere.
+%
+g; and g, walk backward and forward through your change list — every
+position where you made an edit. A chronological breadcrumb trail.
+%
+zt, zz, and zb scroll the viewport so the current line sits at the top,
+center, or bottom of the screen, without moving the cursor.
+%
+H, M, and L move the cursor to the top, middle, or bottom of the visible
+screen. No scrolling needed — just reposition and keep editing.
+%
+Ctrl-D and Ctrl-U scroll half a page down or up. Ctrl-F and Ctrl-B scroll a
+full page. Use them instead of holding j or k like a barbarian.
+%
+f{char} jumps the cursor forward to the next occurrence of a character on the
+current line. ; repeats it. , reverses it. This is faster than you think.
+%
+t{char} jumps to just before a character. dt, deletes everything up to the
+next comma. ct) changes everything up to the closing parenthesis. The t is
+for "till."
+%
+W, B, and E operate on WORDS — whitespace-delimited tokens — rather than
+vim-defined words. Useful for jumping over dotted identifiers and
+punctuation-heavy code.
+%
+( and ) jump by sentences. { and } jump by paragraphs. For code, paragraphs
+are often contiguous non-blank-line blocks, which maps surprisingly well to
+function boundaries.
+%
+=i{ re-indents the entire block under the cursor. Place your cursor anywhere
+inside braces and let Vim fix the indentation. Works for any bracket pair.
+%
+gq{motion} reflows text to the value of 'textwidth'. gqip reformats the
+current paragraph. Useful for keeping prose and comments from sprawling.
+%
+gU{motion} uppercases, gu{motion} lowercases, g~{motion} swaps case.
+gUiw uppercases the current word without selecting it first.
+%
+Ctrl-A increments the number under the cursor. Ctrl-X decrements it. Give
+either a count: 10 Ctrl-A adds ten. Works on hex values too, if 'nrformats'
+includes hex.
+%
+Visual block mode (Ctrl-V) lets you select a rectangular column of text.
+I in visual block mode inserts text at the start of every selected line
+simultaneously. Essential for adding or removing aligned prefixes.
+%
+>> and << indent and dedent the current line. In visual mode, they work on
+the selection and keep you in visual mode so you can indent repeatedly.
+%
+:sort sorts lines alphabetically. :sort! reverses it. :sort n sorts
+numerically. Select a range in visual mode first to sort only part of a file.
+%
+J joins the current line with the line below, inserting a space between them.
+gJ does the same without the space. 5J joins five lines.
+%
+o opens a new line below and enters insert mode. O opens one above.
+These are almost always faster than End, Enter, or Home, i.
+%
+A appends at end of line. I inserts at the first non-blank character.
+You rarely need to navigate to either end manually.
+%
+S (uppercase) deletes the current line's contents, respects indentation, and
+enters insert mode. For rewriting a line from the correct indent level.
+%
+R enters replace mode, overwriting characters as you type until Esc. A scalpel
+for when you need to overwrite a fixed-width field without disturbing what
+follows.
+%
+q: opens the command-line history in an editable buffer. q/ does the same for
+search history. Edit a past command like any text, then Enter to run it.
+%
+Ctrl-R = in insert mode opens an expression register. Type any Vimscript
+expression, press Enter, and the result is inserted into the buffer.
+Evaluate math, call functions, or read variables — all without leaving insert.
+%
+:read !{command} inserts the output of a shell command below the cursor.
+:read !date stamps the current time into your document. Pipes flow both ways.
+%
+:{range}!{command} filters the selected lines through an external command and
+replaces them with its output. :%!sort -u deduplicates and sorts the entire
+file using your shell's sort. Vim and Unix compose.
+%
+:split and :vsplit open horizontal and vertical splits. Ctrl-W followed by
+hjkl navigates between them. Ctrl-W = equalizes their sizes.
+%
+Ctrl-W T moves the current split into its own tab. Ctrl-W o closes all other
+splits, leaving only the current window. Handy when a split has outlived its
+usefulness.
+%
+Buffers are not tabs. A buffer is an open file. A window is a viewport into a
+buffer. A tab is a layout of windows. You can view the same buffer in multiple
+windows simultaneously.
+%
+:ls lists all open buffers. :b {partial name} jumps to a buffer by name —
+Tab-completion works. :bd closes one. You don't need a plugin to manage
+a modest buffer list.
+%
+:args {glob} loads a set of files into the argument list. :argdo {command}
+runs a command on every file in it. Bulk refactoring across a directory
+without leaving Vim.
+%
+:vimgrep /{pattern}/g ** populates the quickfix list with every match across
+your project. :copen shows the list; Enter jumps to each hit. A built-in
+project-wide search.
+%
+:cdo {command} runs a command on every entry in the quickfix list.
+After a :vimgrep, :cdo s/old/new/ | update renames across every matching file.
+%
+:set spell enables spell-checking. ]s jumps to the next misspelling. z= over a
+word shows suggestions. zg adds a word to your dictionary. zw marks one as
+wrong.
+%
+:set colorcolumn=80 draws a vertical guide at column 80. A gentle reminder
+rather than a hard wall. Pair with 'textwidth' for automatic line breaking.
+%
+'relativenumber' shows line distances rather than absolute numbers, turning
+every jump count into a trivially readable value. 14j. 6k. No arithmetic.
+%
+Folding with 'foldmethod=indent' or 'foldmethod=syntax' collapses structure
+automatically. za toggles a fold. zM closes all folds. zR opens all folds.
+%
+:mksession saves the entire editor state — windows, buffers, folds, cursor
+positions — to a file. vim -S Session.vim restores it exactly. Leave. Come
+back. Continue.
+%
+autocmd BufWritePre * :%s/\s\+$//e automatically strips trailing whitespace on
+every save. A small ceremony that keeps diffs clean.
+%
+iabbrev is Vim's autocorrect for insert mode. iabbrev teh the fixes a
+perennial typo silently and permanently. You can also use it to expand
+abbreviations into boilerplate.
+%
+:help {topic} is the fastest documentation in any editor. :help 'option'
+looks up a setting. :help :command looks up a command. :help function()
+looks up a function. The entire manual is one keystroke away.
+%
+:helpgrep {pattern} searches the full Vim documentation for a pattern and
+populates the quickfix list. If you don't know the right :help keyword,
+this finds it.
+%
+Don't add a mapping until you've used the bare command long enough to feel the
+friction. Map the friction, not the imagined convenience.
+%
+Use nnoremap, inoremap, vnoremap — not nmap, imap, vmap. The noremap variants
+don't chain through other mappings. The difference surfaces as a subtle,
+maddening bug if you ever get it wrong.
+%
+Write your vimrc incrementally. Add one setting, learn it, keep it if it
+helps. A vimrc copied wholesale from a stranger is a collection of answers
+to questions you haven't asked yet.
+%
+:set paste and :set nopaste toggle paste mode, which disables autoindent and
+remapping during a paste. If your terminal pastes look like a staircase, this
+is why. (Or just use Ctrl-Shift-V, or "+p.)
+%
+Digraphs let you insert characters not on your keyboard. In insert mode,
+Ctrl-K followed by two characters produces the digraph. Ctrl-K a: produces ä.
+:digraphs lists them all.
+%
+Ctrl-N and Ctrl-P in insert mode trigger keyword completion from the current
+buffer and all open buffers. No plugin required for basic autocomplete.
+%
+Ctrl-X Ctrl-F completes file paths. Ctrl-X Ctrl-L completes whole lines.
+Ctrl-X Ctrl-] completes from ctags. Each Ctrl-X sub-mode is a specialized
+completion source.
+%
+:earlier and :later travel through undo history by time rather than edit count.
+:earlier 5m takes the buffer back to how it looked five minutes ago.
+%
+The undo tree, not the undo list. Vim's undo history is a tree: if you undo
+several steps and then make a new edit, the old branch is preserved, not
+erased. :undolist shows the branches. The undotree plugin makes it visual.
+%
+vimtutor is an interactive tutorial built into Vim. If someone you know is
+learning, sit them down with vimtutor before any YouTube video. Thirty minutes
+of hands-on beats two hours of watching.
+%
+The best Vim tip: stay in normal mode most of the time. Insert mode is for
+typing. Normal mode is for thinking. The cursor resting in normal mode is not
+idle — it's ready.
+%
