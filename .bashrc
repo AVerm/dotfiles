@@ -96,8 +96,6 @@ alias l='ls -CF'
 #   sleep 10; alert
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# Alias definitions.
-[ -f ~/.bash_aliases ] && source ~/.bash_aliases
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -110,18 +108,38 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# Scripts folder
- [ -d "$HOME/scripts" ] && PATH="$PATH:$HOME/scripts"
+include_dirs=(
+	# Scripts folder
+	"$HOME/scripts"
+	# Setup for Rust
+	"$HOME/.cargo/bin"
+	# Setup for Haskell
+	"$HOME/.ghcup/bin"
+	# Setup for Kotlin
+	"$HOME/.kotlinc/bin"
+	# Add programs that are not already installed that I have stored in my application folder
+	"$HOME/Appliations/Launchers"
+	# A folder on a separate partition for LLM stuff
+	"/usr/bin/llm"
+)
+source_files=(
+	# Alias definitions.
+	"$HOME/.bash_aliases"
+	# Setup for Haskell
+	"$HOME/.ghcup/env"
+	# Set up FZF
+	"~/.fzf.bash"
+)
 
-# Setup for Rust
-[ -d "$HOME/.cargo/bin" ] && PATH="$HOME/.cargo/bin:$PATH"
+for dir in "${include_dirs[@]}"
+do
+	[ -d "$dir" ] && PATH="$dir:$PATH"
+done
 
-# Setup for Haskell
-[ -d "$HOME/.ghcup/bin" ] && PATH="$PATH:$HOME/.ghcup/bin"
-[ -f "$HOME/.ghcup/env" ] && source "$HOME/.ghcup/env"
-
-# Setup for Kotlin
-[ -d "$HOME/.kotlinc/bin" ] && PATH="$HOME/.kotlinc/bin:$PATH"
+for file in "${source_files[@]}"
+do
+	[ -f "$file" ] && source "$file"
+done
 
 # Fortune with cowsay, and custom fortunes to boot
 fortune_cmd=('fortune')
@@ -131,17 +149,6 @@ fortune_cmd=('fortune')
 # Set navigation to be vi-style
 set -o vi
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
-
-# Add programs that are not already installed that I have stored in my application folder
-[ -d "$HOME/Appliations/Launchers" ] && PATH="$PATH:$HOME/Applications/Launchers"
-
-# Add updated texlive distribution to path
-PATH=/usr/local/texlive/2020/bin/x86_64-linux:$PATH
-
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# A folder on a separate partition for LLM stuff
-[ -d "/usr/bin/llm" ] && PATH="$PATH:/usr/bin/llm"
