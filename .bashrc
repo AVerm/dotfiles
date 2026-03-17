@@ -97,10 +97,6 @@ alias l='ls -CF'
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # Alias definitions.
-# You may want to put all your additions into a separate file like
-# ~/.bash_aliases, instead of adding them here directly.
-# See /usr/share/doc/bash-doc/examples in the bash-doc package.
-
 [ -f ~/.bash_aliases ] && source ~/.bash_aliases
 
 # enable programmable completion features (you don't need to enable
@@ -114,9 +110,7 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# MY ADDITIONS BELOW THIS LINE
-
-# add scripts folder to path
+# Scripts folder
  [ -d "$HOME/scripts" ] && PATH="$PATH:$HOME/scripts"
 
 # Setup for Rust
@@ -129,7 +123,7 @@ fi
 # Setup for Kotlin
 [ -d "$HOME/.kotlinc/bin" ] && PATH="$HOME/.kotlinc/bin:$PATH"
 
-# For fun
+# Fortune with cowsay, and custom fortunes to boot
 fortune_cmd=('fortune')
 [ -d "$HOME/fortunes/" ] && fortune_cmd=(fortune 10% ~/fortunes/quotes.fortune 20% ~/fortunes/vim.fortune /usr/share/games/fortunes/)
 "${fortune_cmd[@]}" | cowsay
@@ -149,4 +143,5 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
+# A folder on a separate partition for LLM stuff
 [ -d "/usr/bin/llm" ] && PATH="$PATH:/usr/bin/llm"
