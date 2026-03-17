@@ -132,6 +132,7 @@ fi
 if [ -d "$HOME/.ghcup/bin" ] ; then
 	PATH="$PATH:$HOME/.ghcup/bin"
 fi
+[ -f "$HOME/.ghcup/env" ] && source "$HOME/.ghcup/env"
 
 # Setup for Kotlin
 if [ -d "$HOME/.kotlinc/bin" ] ; then
@@ -153,3 +154,11 @@ PATH="$PATH:$HOME/Applications/Launchers"
 
 # Add updated texlive distribution to path
 PATH=/usr/local/texlive/2020/bin/x86_64-linux:$PATH
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+if [ -d "/usr/bin/llm" ] ; then
+	PATH="$PATH:/usr/bin/llm"
+fi
