@@ -139,7 +139,9 @@ if [ -d "$HOME/.kotlinc/bin" ] ; then
 fi
 
 # For fun
-fortune | cowsay
+fortune_cmd=('fortune')
+[ -d "$HOME/fortunes/" ] && fortune_cmd=(fortune 10% ~/fortunes/quotes.fortune 20% ~/fortunes/vim.fortune /usr/share/games/fortunes/)
+"${fortune_cmd[@]}" | cowsay
 
 # Set navigation to be vi-style
 set -o vi
