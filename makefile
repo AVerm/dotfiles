@@ -2,7 +2,7 @@ LINKTYPE = -s # -s for soft, or -P for hard
 DOTFILES = .bash_aliases .gitignore .inputrc .vimrc .XCompose .screenrc project.screenrc dashboard.screenrc scripts .ghci .dmrc fortunes # List of dotfiles
 CRONFILE = .crontab # Location of file holding crontab contents
 XKB_DIR = /usr/share/X11/
-all: link git cron keyboardsettings userchrome # These are the top-level tagets
+all: link git cron keyboardsettings userchrome # These are the top-level targets
 
 .PHONY: link $(DOTFILES) # Not a real file target
 link: $(DOTFILES) # To make link, process dotfiles
