@@ -101,9 +101,7 @@ alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo
 # ~/.bash_aliases, instead of adding them here directly.
 # See /usr/share/doc/bash-doc/examples in the bash-doc package.
 
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi
+[ -f ~/.bash_aliases ] && source ~/.bash_aliases
 
 # enable programmable completion features (you don't need to enable
 # this, if it's already enabled in /etc/bash.bashrc and /etc/profile
@@ -119,25 +117,17 @@ fi
 # MY ADDITIONS BELOW THIS LINE
 
 # add scripts folder to path
-if [ -d "$HOME/scripts" ] ; then
-	PATH="$PATH:$HOME/scripts"
-fi
+ [ -d "$HOME/scripts" ] && PATH="$PATH:$HOME/scripts"
 
 # Setup for Rust
-if [ -d "$HOME/.cargo/bin" ] ; then
-	PATH="$HOME/.cargo/bin:$PATH"
-fi
+[ -d "$HOME/.cargo/bin" ] && PATH="$HOME/.cargo/bin:$PATH"
 
 # Setup for Haskell
-if [ -d "$HOME/.ghcup/bin" ] ; then
-	PATH="$PATH:$HOME/.ghcup/bin"
-fi
+[ -d "$HOME/.ghcup/bin" ] && PATH="$PATH:$HOME/.ghcup/bin"
 [ -f "$HOME/.ghcup/env" ] && source "$HOME/.ghcup/env"
 
 # Setup for Kotlin
-if [ -d "$HOME/.kotlinc/bin" ] ; then
-	PATH="$HOME/.kotlinc/bin:$PATH"
-fi
+[ -d "$HOME/.kotlinc/bin" ] && PATH="$HOME/.kotlinc/bin:$PATH"
 
 # For fun
 fortune_cmd=('fortune')
@@ -150,7 +140,7 @@ set -o vi
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
 # Add programs that are not already installed that I have stored in my application folder
-PATH="$PATH:$HOME/Applications/Launchers"
+[ -d "$HOME/Appliations/Launchers" ] && PATH="$PATH:$HOME/Applications/Launchers"
 
 # Add updated texlive distribution to path
 PATH=/usr/local/texlive/2020/bin/x86_64-linux:$PATH
@@ -159,6 +149,4 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-if [ -d "/usr/bin/llm" ] ; then
-	PATH="$PATH:/usr/bin/llm"
-fi
+[ -d "/usr/bin/llm" ] && PATH="$PATH:/usr/bin/llm"
