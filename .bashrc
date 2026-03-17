@@ -108,6 +108,8 @@ if ! shopt -oq posix; then
   fi
 fi
 
+export NVM_DIR="$HOME/.nvm"
+
 include_dirs=(
 	# Scripts folder
 	"$HOME/scripts"
@@ -129,6 +131,10 @@ source_files=(
 	"$HOME/.ghcup/env"
 	# Set up FZF
 	"~/.fzf.bash"
+	# This loads nvm
+	"$NVM_DIR/nvm.sh"
+	# This loads nvm bash_completion
+	"$NVM_DIR/bash_completion"
 )
 
 for dir in "${include_dirs[@]}"
@@ -148,7 +154,3 @@ fortune_cmd=('fortune')
 
 # Set navigation to be vi-style
 set -o vi
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
