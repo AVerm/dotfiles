@@ -131,10 +131,6 @@ source_files=(
 	"$HOME/.ghcup/env"
 	# Set up FZF
 	"~/.fzf.bash"
-	# This loads nvm
-	"$NVM_DIR/nvm.sh"
-	# This loads nvm bash_completion
-	"$NVM_DIR/bash_completion"
 )
 
 for dir in "${include_dirs[@]}"
