@@ -14,6 +14,10 @@ alias histogram="sort $1 | uniq -c | sort -nr"
 alias entropy="cat /proc/sys/kernel/random/entropy_avail"
 alias obscam="sudo modprobe v4l2loopback video_nr=10 card_label=\"OBS Video Source\" exclusive_caps=1"
 
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
 journal() {
 	NAME="$@"
 	TITLE=`echo "$NAME" | sed 's/ //g'`
