@@ -138,9 +138,11 @@ do
 done
 
 # Fortune with cowsay, and custom fortunes to boot
-fortune_cmd=('fortune')
-[ -d "$HOME/fortunes/" ] && fortune_cmd=(fortune 10% ~/fortunes/quotes.fortune 20% ~/fortunes/vim.fortune /usr/share/games/fortunes/)
-"${fortune_cmd[@]}" | cowsay
+if command -v fortune &>/dev/null && command -v cowsay &>/dev/null; then
+	fortune_cmd=('fortune')
+	[ -d "$HOME/fortunes/" ] && fortune_cmd=(fortune 10% ~/fortunes/quotes.fortune 20% ~/fortunes/vim.fortune /usr/share/games/fortunes/)
+	"${fortune_cmd[@]}" | cowsay
+fi
 
 # Set navigation to be vi-style
 set -o vi
