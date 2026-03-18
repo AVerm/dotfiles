@@ -98,8 +98,6 @@ if ! shopt -oq posix; then
   fi
 fi
 
-export NVM_DIR="$HOME/.nvm"
-
 include_dirs=(
 	# Scripts folder
 	"$HOME/scripts"
@@ -132,6 +130,15 @@ for file in "${source_files[@]}"
 do
 	[ -f "$file" ] && source "$file"
 done
+
+export NVM_DIR="$HOME/.nvm"
+# Lazy source NVM
+nvm() {
+	unset -f nvm
+	[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+	[ -s "$NVM_DIR/bash_completion" ] && source "$NVM_DIR/bash_completion"
+	nvm "$@"
+}
 
 # Fortune with cowsay, and custom fortunes to boot
 if command -v fortune &>/dev/null && command -v cowsay &>/dev/null; then
