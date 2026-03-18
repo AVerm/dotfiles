@@ -114,7 +114,7 @@ include_dirs=(
 	# Setup for Kotlin
 	"$HOME/.kotlinc/bin"
 	# Add programs that are not already installed that I have stored in my application folder
-	"$HOME/Appliations/Launchers"
+	"$HOME/Applications/Launchers"
 	# A folder on a separate partition for LLM stuff
 	"/usr/bin/llm"
 )
