@@ -124,7 +124,7 @@ source_files=(
 	# Setup for Haskell
 	"$HOME/.ghcup/env"
 	# Set up FZF
-	"~/.fzf.bash"
+	"$HOME/.fzf.bash"
 )
 
 for dir in "${include_dirs[@]}"
