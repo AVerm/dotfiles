@@ -121,10 +121,16 @@ source_files=(
 	"$HOME/.fzf.bash"
 )
 
+include_path=''
 for dir in "${include_dirs[@]}"
 do
-	[ -d "$dir" ] && PATH="$dir:$PATH"
+	if [ -z "$include_path" ]; then
+		[ -d "$dir" ] && include_path="$dir"
+	else
+		[ -d "$dir" ] && include_path="$dir:$include_path"
+	fi
 done
+PATH="$include_path:$PATH"
 
 for file in "${source_files[@]}"
 do
