@@ -131,11 +131,13 @@ do
 	fi
 done
 PATH="$include_path:$PATH"
+unset dir include_dirs include_path
 
 for file in "${source_files[@]}"
 do
 	[ -f "$file" ] && source "$file"
 done
+unset file source_files
 
 export NVM_DIR="$HOME/.nvm"
 # Lazy source NVM
