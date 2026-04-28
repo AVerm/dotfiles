@@ -111,6 +111,8 @@ include_dirs=(
 	"$HOME/Applications/Launchers"
 	# A folder on a separate partition for LLM stuff
 	"/usr/bin/llm"
+	# Lean
+	"$HOME/.elan/bin"
 )
 source_files=(
 	# Alias definitions.
