@@ -137,7 +137,7 @@ unset dir include_dirs include_path
 
 for file in "${source_files[@]}"
 do
-	[ -f "$file" ] && source "$file"
+	[ -f "$file" ] && . "$file"
 done
 unset file source_files
 
