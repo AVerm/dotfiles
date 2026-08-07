@@ -109,3 +109,4 @@ fi
 
 # Set navigation to be vi-style
 set -o vi
+INPUTRC="$HOME/.inputrc"
