@@ -1,6 +1,18 @@
 set revert-all-at-newline on
-Control-l: clear-screen
 set completion-ignore-case on
+
+set keymap emacs
+Control-l: clear-screen
+
+set keymap vi-command
+Control-l: clear-screen
+
+set keymap vi-insert
+Control-l: clear-screen
+
+# This is normally implicit.
+# To set normal apps below, we have to add because we had some above
+set keymap emacs
 
 $if mit-scheme
   "\C-c" rlwrap-direct-keypress
