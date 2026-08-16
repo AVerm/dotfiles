@@ -1,0 +1,838 @@
+#!/usr/bin/env bash
+#
+# ============================================================================
+#  vault — an encrypted "digital safe" manager for Linux
+# ============================================================================
+#
+#  WHAT IS THIS? (plain-language summary — safe to paste to an AI assistant)
+#
+#  This script manages encrypted storage "vaults" on a Linux computer.
+#  A vault is a single ordinary file on your disk (for example
+#  ~/vaults/taxes.img) whose contents are scrambled with strong encryption
+#  (the industry-standard "LUKS2" system built into Linux). When you
+#  "unlock" a vault with your passphrase, it appears as a normal folder you
+#  can put files in. When you "lock" it, the folder disappears and only the
+#  scrambled file remains — unreadable without the passphrase.
+#
+#  The script remembers your vaults (their names, where the files live,
+#  where they get mounted) in a small text file called ~/.vaultconfig.
+#
+#  IMPORTANT SAFETY PROPERTIES:
+#   * Your passphrase is typed directly into the system encryption tool
+#     ("cryptsetup"). This script never reads, stores, or sees it.
+#   * If you forget ALL passphrases for a vault, the data is gone forever.
+#     That is by design — it's what makes the encryption trustworthy.
+#   * Destructive actions (like destroying a vault) require you to type the
+#     vault's exact name to confirm, like deleting a repository on GitHub.
+#
+#  COMMANDS (run `vault --usage` for details):
+#     create, unlock, lock, grow, configure, backup, destroy, list
+#
+# ============================================================================
+
+# "Strict mode": stop immediately on unexpected errors (-e), treat unset
+# variables as bugs (-u), and don't hide failures inside pipelines (pipefail).
+set -euo pipefail
+
+# ----------------------------------------------------------------------------
+# SCRIPT SETTINGS
+# These are deliberately NOT command-line options (except the config path,
+# which can be overridden with --vaultconfig=PATH for one invocation).
+# ----------------------------------------------------------------------------
+VAULTCONFIG="${HOME}/.vaultconfig"   # Where vault metadata is remembered.
+CIPHER="aes-xts-plain64"             # Encryption algorithm: AES in XTS mode,
+                                     # the standard for disk encryption.
+KEYSIZE=512                          # 512 bits total => AES-256 (XTS splits
+                                     # the key in half; this is not AES-512).
+LUKS_TYPE="luks2"                    # Modern LUKS on-disk format.
+PBKDF="argon2id"                     # Passphrase-hardening function. Memory-
+                                     # hard: makes password-guessing with
+                                     # GPUs/ASICs impractical.
+
+# Privileged steps (opening encrypted devices, mounting) need root.
+# If we're not root already, prefix those steps with sudo.
+if [[ ${EUID} -eq 0 ]]; then SUDO=""; else SUDO="sudo"; fi
+
+VAULT=""   # Filled in by resolve_vault() — the vault the user selected.
+
+# ----------------------------------------------------------------------------
+# SMALL HELPERS
+# ----------------------------------------------------------------------------
+
+# Print an error and stop the script.
+die()  { printf 'vault: %s\n' "$*" >&2; exit 1; }
+# Print a warning but keep going.
+warn() { printf 'vault: %s\n' "$*" >&2; }
+
+# Simple yes/no question. Returns success only on an explicit "y" or "Y".
+confirm() {
+    local prompt="${1:-Are you sure?}" ans
+    read -rp "${prompt} [y/N] " ans || return 1
+    [[ "${ans}" =~ ^[Yy]$ ]]
+}
+
+# GitHub-style confirmation: the user must type the vault's exact name.
+# Used before anything irreversible. Returns failure on any mismatch.
+confirm_name() {
+    local why="$1" typed
+    echo "${why}"
+    read -rp "Type the vault name '${VAULT}' to continue: " typed || return 1
+    if [[ "${typed}" != "${VAULT}" ]]; then
+        warn "name mismatch — nothing was changed"
+        return 1
+    fi
+}
+
+# Turn a leading "~" into the user's home directory ("~/x" -> "/home/you/x").
+expand_tilde() {
+    case "$1" in
+        "~")    printf '%s' "${HOME}" ;;
+        "~/"*)  printf '%s' "${HOME}/${1#\~/}" ;;
+        *)      printf '%s' "$1" ;;
+    esac
+}
+
+# Convert a human size like "2G" or "500M" into a number of bytes.
+to_bytes() {
+    local s=$1 n u
+    n=${s%[KMGTkmgt]}       # the number part
+    u=${s#"$n"}             # the unit letter, if any
+    case "$u" in
+        K|k) echo $(( n * 1024 )) ;;
+        M|m) echo $(( n * 1024 ** 2 )) ;;
+        G|g) echo $(( n * 1024 ** 3 )) ;;
+        T|t) echo $(( n * 1024 ** 4 )) ;;
+        "")  echo $(( n )) ;;
+    esac
+}
+
+# The reverse: bytes -> a friendly string like "2.0GB".
+human() { numfmt --to=iec --suffix=B "$1" 2>/dev/null || echo "$1 bytes"; }
+
+# Vault names may only use letters, digits, "_" and "-". This keeps the
+# config file unambiguous and makes names safe to use in device names.
+valid_name() { [[ "$1" =~ ^[A-Za-z0-9_-]+$ ]]; }
+valid_size() { [[ "$1" =~ ^[0-9]+([KMGTkmgt])?$ ]]; }
+
+# Is the vault's decrypted device currently present? / currently mounted?
+is_open()    { [[ -b "/dev/mapper/$1" ]]; }
+is_mounted() {
+    if command -v findmnt &>/dev/null; then
+        findmnt -rn --source "/dev/mapper/$1" &>/dev/null
+    else
+        grep -q "^/dev/mapper/$1 " /proc/mounts 2>/dev/null
+    fi
+}
+
+# Reserve disk space for the container file. fallocate reserves real space
+# up front (preferred); truncate creates a "sparse" file that grows on use.
+allocate_file() {
+    local path=$1 size=$2
+    if command -v fallocate &>/dev/null && fallocate -l "$size" "$path" 2>/dev/null; then
+        return 0
+    fi
+    truncate -s "$size" "$path"
+}
+
+# Make sure the tools we depend on exist before doing anything.
+check_deps() {
+    command -v cryptsetup &>/dev/null \
+        || die "cryptsetup not found; install it (e.g. sudo apt install cryptsetup)"
+}
+
+# ----------------------------------------------------------------------------
+# THE CONFIG FILE
+#
+# Plain text, one fact per line, formatted as:   vaultname.key=value
+# Example:
+#   taxes.location=/home/you/vaults/taxes.img
+#   taxes.mount=/home/you/vaults/taxes
+# Because names/keys are restricted to safe characters, simple text tools
+# (grep/sed) can read and edit it without ambiguity. File permissions are
+# kept at 600 (only you can read it) — it holds no secrets, but it does
+# reveal where your vaults live.
+# ----------------------------------------------------------------------------
+config_touch() {
+    mkdir -p "$(dirname "$VAULTCONFIG")"
+    [[ -f "$VAULTCONFIG" ]] || { touch "$VAULTCONFIG"; chmod 600 "$VAULTCONFIG"; }
+}
+
+# All vault names that appear in the config, one per line.
+config_list_vaults() {
+    [[ -f "$VAULTCONFIG" ]] || return 0
+    sed -En 's/^([A-Za-z0-9_-]+)\..*/\1/p' "$VAULTCONFIG" | sort -u
+}
+
+config_has_vault() { config_list_vaults | grep -qx -- "$1"; }
+
+# Read one value. Prints it; fails if absent.
+config_get() {
+    local v=$1 k=$2 line
+    [[ -f "$VAULTCONFIG" ]] || return 1
+    line=$(grep -m1 "^${v}\.${k}=" "$VAULTCONFIG" 2>/dev/null) || return 1
+    printf '%s' "${line#"${v}.${k}="}"
+}
+
+# Write one value (replacing any previous value for the same key).
+# Writes go to a temp file first, then atomically replace the config, so a
+# crash mid-write can't corrupt it.
+config_set() {
+    local v=$1 k=$2 val=$3 tmp
+    config_touch
+    tmp=$(mktemp)
+    grep -v "^${v}\.${k}=" "$VAULTCONFIG" > "$tmp" 2>/dev/null || true
+    printf '%s.%s=%s\n' "$v" "$k" "$val" >> "$tmp"
+    mv "$tmp" "$VAULTCONFIG"
+    chmod 600 "$VAULTCONFIG"
+}
+
+config_unset() {
+    local v=$1 k=$2 tmp
+    [[ -f "$VAULTCONFIG" ]] || return 0
+    tmp=$(mktemp)
+    grep -v "^${v}\.${k}=" "$VAULTCONFIG" > "$tmp" 2>/dev/null || true
+    mv "$tmp" "$VAULTCONFIG"
+    chmod 600 "$VAULTCONFIG"
+}
+
+# Remove every line belonging to one vault.
+config_del_vault() {
+    local v=$1 tmp
+    [[ -f "$VAULTCONFIG" ]] || return 0
+    tmp=$(mktemp)
+    grep -v "^${v}\." "$VAULTCONFIG" > "$tmp" 2>/dev/null || true
+    mv "$tmp" "$VAULTCONFIG"
+    chmod 600 "$VAULTCONFIG"
+}
+
+# Rename a vault in the config ("old." prefix -> "new." prefix).
+config_rename_vault() {
+    local old=$1 new=$2 tmp
+    tmp=$(mktemp)
+    sed -E "s/^${old}\./${new}./" "$VAULTCONFIG" > "$tmp"
+    mv "$tmp" "$VAULTCONFIG"
+    chmod 600 "$VAULTCONFIG"
+}
+
+# ----------------------------------------------------------------------------
+# VAULT SELECTION
+# Commands take an optional vault name. If it's given, verify it exists.
+# If it's not, show a numbered menu of configured vaults to pick from.
+# ----------------------------------------------------------------------------
+resolve_vault() {
+    local name=${1:-}
+    if [[ -n "$name" ]]; then
+        config_has_vault "$name" || die "no such vault: '$name' (try 'vault list')"
+        VAULT="$name"
+        return 0
+    fi
+    local vaults=()
+    mapfile -t vaults < <(config_list_vaults)
+    (( ${#vaults[@]} > 0 )) || die "no vaults configured; run 'vault create'"
+    echo "Select a vault:" >&2
+    local i
+    for i in "${!vaults[@]}"; do
+        printf '  %d) %s\n' "$((i + 1))" "${vaults[$i]}" >&2
+    done
+    printf '  0) cancel\n' >&2
+    local choice
+    read -rp "Vault number: " choice || die "aborted"
+    [[ "$choice" =~ ^[0-9]+$ ]] || die "invalid selection"
+    (( choice == 0 )) && die "cancelled"
+    (( choice >= 1 && choice <= ${#vaults[@]} )) || die "invalid selection"
+    VAULT="${vaults[$((choice - 1))]}"
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault create
+# Walks you through making a new vault: pick a name, a place for the
+# container file, a size, and a mount point; set one or more passphrases;
+# then format it and record it in the config.
+# ----------------------------------------------------------------------------
+cmd_create() {
+    local name=${1:-}
+    echo "== Create a new vault =="
+
+    # Ask until we get a valid, unused name.
+    while :; do
+        if [[ -z "$name" ]]; then
+            read -rp "Vault name (letters, digits, _ or -): " name || die "aborted"
+        fi
+        if ! valid_name "$name"; then echo "Invalid name."; name=""; continue; fi
+        if config_has_vault "$name"; then echo "Vault '$name' already exists."; name=""; continue; fi
+        break
+    done
+
+    local default_loc="${HOME}/vaults/${name}.img" location
+    read -rp "Container file path [${default_loc}]: " location || die "aborted"
+    location=$(expand_tilde "${location:-$default_loc}")
+    [[ -e "$location" ]] && die "file already exists: $location"
+
+    local size
+    while :; do
+        read -rp "Vault size (e.g. 500M, 2G, 10G): " size || die "aborted"
+        valid_size "$size" && break || echo "Invalid size."
+    done
+
+    local default_mnt="${HOME}/vaults/${name}" mnt
+    read -rp "Mount point (the folder it appears at) [${default_mnt}]: " mnt || die "aborted"
+    mnt=$(expand_tilde "${mnt:-$default_mnt}")
+
+    # "mapper" is the internal device name Linux uses while the vault is open.
+    local mapper="vault-${name}" fs="ext4"
+
+    echo
+    echo "About to create:"
+    echo "  name:      $name"
+    echo "  container: $location  (${size})"
+    echo "  mount:     $mnt"
+    echo "  cipher:    $CIPHER  (${LUKS_TYPE}, key-size ${KEYSIZE}, kdf ${PBKDF})"
+    confirm "Proceed?" || die "aborted"
+
+    mkdir -p "$(dirname "$location")"
+    echo "Allocating ${size} container..."
+    allocate_file "$location" "$size" || die "failed to allocate container"
+
+    # luksFormat writes the encryption header and sets the FIRST passphrase.
+    # cryptsetup itself prompts for the passphrase — this script never sees it.
+    echo "Formatting LUKS2 volume — set the first passphrase now."
+    $SUDO cryptsetup luksFormat --type "$LUKS_TYPE" --cipher "$CIPHER" \
+        --key-size "$KEYSIZE" --pbkdf "$PBKDF" "$location" \
+        || { rm -f "$location"; die "luksFormat failed"; }
+
+    # LUKS supports several independent passphrases ("keyslots") for the
+    # same vault — e.g. yours plus a family member's. Any one of them opens it.
+    while confirm "Add another keyslot (an additional passphrase)?"; do
+        $SUDO cryptsetup luksAddKey "$location" \
+            && echo "Keyslot added." || echo "Failed to add keyslot (continuing)."
+    done
+
+    # Open the new container once and create an empty filesystem inside it.
+    # (cryptsetup will ask for the passphrase again — that's expected.)
+    echo "Initializing ${fs} filesystem (enter the passphrase once more)..."
+    $SUDO cryptsetup open "$location" "$mapper" \
+        || { rm -f "$location"; die "failed to open new container"; }
+    $SUDO mkfs.ext4 -q "/dev/mapper/$mapper" \
+        || { $SUDO cryptsetup close "$mapper"; rm -f "$location"; die "mkfs failed"; }
+    $SUDO cryptsetup close "$mapper"
+
+    mkdir -p "$mnt"
+
+    # Remember everything in the config file.
+    config_set "$name" location "$location"
+    config_set "$name" mapper   "$mapper"
+    config_set "$name" mount    "$mnt"
+    config_set "$name" fs       "$fs"
+    config_set "$name" cipher   "$CIPHER"
+    config_set "$name" created  "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    echo
+    echo "Vault '$name' created. Unlock with:  vault unlock $name"
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault unlock
+# Decrypts the container (asks for your passphrase) and mounts it as a
+# normal folder. Two steps: cryptsetup open (decrypt) + mount (attach folder).
+# ----------------------------------------------------------------------------
+cmd_unlock() {
+    resolve_vault "${1:-}"
+    local loc mapper mnt
+    loc=$(config_get "$VAULT" location)  || die "config missing 'location' for $VAULT"
+    mapper=$(config_get "$VAULT" mapper) || die "config missing 'mapper' for $VAULT"
+    mnt=$(config_get "$VAULT" mount)     || die "config missing 'mount' for $VAULT"
+    [[ -e "$loc" ]] || die "container file not found: $loc"
+
+    if is_open "$mapper"; then
+        echo "Already unlocked."
+    else
+        $SUDO cryptsetup open "$loc" "$mapper" || die "unlock failed"
+    fi
+
+    mkdir -p "$mnt" 2>/dev/null || $SUDO mkdir -p "$mnt"
+
+    if is_mounted "$mapper"; then
+        echo "Already mounted."
+    else
+        $SUDO mount "/dev/mapper/$mapper" "$mnt" \
+            || { $SUDO cryptsetup close "$mapper"; die "mount failed"; }
+        # Make the mounted folder owned by you, not root.
+        $SUDO chown "$(id -u):$(id -g)" "$mnt" 2>/dev/null || true
+    fi
+
+    echo "Vault '$VAULT' unlocked at: $mnt"
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault lock
+# The reverse of unlock: unmount the folder, then close the encrypted
+# device. After this, only the scrambled container file remains on disk.
+# We unmount by DEVICE (not by the folder path in the config) so a stale or
+# edited config can never cause us to unmount the wrong thing.
+# ----------------------------------------------------------------------------
+cmd_lock() {
+    resolve_vault "${1:-}"
+    local mapper
+    mapper=$(config_get "$VAULT" mapper) || die "config missing 'mapper' for $VAULT"
+
+    if is_mounted "$mapper"; then
+        $SUDO umount "/dev/mapper/$mapper" \
+            || die "unmount failed (are files in the vault still open in some program?)"
+    fi
+    if is_open "$mapper"; then
+        $SUDO cryptsetup close "$mapper" || die "close failed"
+    fi
+    echo "Vault '$VAULT' locked."
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault grow
+# Makes a vault bigger, interactively. The vault must be locked first.
+# Three layers each get enlarged in order:
+#   1. the container file itself,
+#   2. the encrypted mapping inside it (cryptsetup resize),
+#   3. the filesystem inside that (resize2fs).
+# Growing is safe in principle, but a backup beforehand is always smart.
+# ----------------------------------------------------------------------------
+cmd_grow() {
+    resolve_vault "${1:-}"
+    local loc mapper
+    loc=$(config_get "$VAULT" location)  || die "config missing 'location' for $VAULT"
+    mapper=$(config_get "$VAULT" mapper) || die "config missing 'mapper' for $VAULT"
+    [[ -e "$loc" ]] || die "container not found: $loc"
+
+    if is_open "$mapper"; then
+        echo "The vault must be locked before growing."
+        confirm "Lock it now?" || die "aborted"
+        cmd_lock "$VAULT"
+    fi
+
+    local cur_bytes
+    cur_bytes=$(stat -c %s "$loc")
+    echo "Current size: $(human "$cur_bytes")"
+
+    local add
+    while :; do
+        read -rp "Grow by how much? (e.g. 500M, 2G): " add || die "aborted"
+        valid_size "$add" && break || echo "Invalid size."
+    done
+
+    local add_bytes new_bytes
+    add_bytes=$(to_bytes "$add")
+    new_bytes=$(( cur_bytes + add_bytes ))
+    echo "New size will be: $(human "$new_bytes")"
+    confirm "Proceed? (backing up first is recommended)" || die "aborted"
+
+    echo "Extending backing file..."
+    if command -v fallocate &>/dev/null && fallocate -l "$new_bytes" "$loc" 2>/dev/null; then :
+    else truncate -s "$new_bytes" "$loc"; fi
+
+    echo "Resizing encrypted mapping (enter the passphrase)..."
+    $SUDO cryptsetup open "$loc" "$mapper" || die "failed to open for resize"
+    $SUDO cryptsetup resize "$mapper" \
+        || { $SUDO cryptsetup close "$mapper"; die "cryptsetup resize failed"; }
+
+    echo "Checking and growing filesystem..."
+    $SUDO e2fsck -f -y "/dev/mapper/$mapper" || warn "fsck reported issues (continuing)."
+    $SUDO resize2fs "/dev/mapper/$mapper" \
+        || { $SUDO cryptsetup close "$mapper"; die "resize2fs failed"; }
+
+    $SUDO cryptsetup close "$mapper"
+    echo "Vault '$VAULT' grown to $(human "$new_bytes")."
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault destroy
+# PERMANENTLY erases a vault. Requires typing the exact vault name (like
+# deleting a GitHub repository), then typing DESTROY, then a final y/N.
+#
+# How the erase works: we overwrite the LUKS *header* — the part of the file
+# holding the passphrase-protected keys. Once the header is gone, the rest
+# of the file is mathematically unrecoverable ciphertext, no matter what
+# forensic tools are used. Then the file is deleted. (We deliberately don't
+# "shred" the whole file: on modern SSDs overwriting in place doesn't
+# reliably hit the same physical cells, so it adds time, not security —
+# destroying the header is the step that actually kills the data.)
+# ----------------------------------------------------------------------------
+cmd_destroy() {
+    resolve_vault "${1:-}"
+    local loc mapper
+    loc=$(config_get "$VAULT" location) || true
+    mapper=$(config_get "$VAULT" mapper) || true
+
+    echo "!! This PERMANENTLY destroys vault '$VAULT' and ALL data inside it."
+    echo "   Container: ${loc:-<unknown>}"
+    echo
+
+    # Confirmation 1: type the exact vault name (GitHub-style).
+    confirm_name "This cannot be undone." || die "nothing destroyed"
+    # Confirmation 2: type the word DESTROY.
+    local ans
+    read -rp "Type DESTROY (all caps) to confirm: " ans || die "aborted"
+    [[ "$ans" == "DESTROY" ]] || die "confirmation failed; nothing destroyed"
+    # Confirmation 3: one last y/N.
+    confirm "Absolutely sure? This is your last chance." || die "aborted; nothing destroyed"
+
+    # If the vault is open/mounted, close it down first — refuse to destroy
+    # something we can't cleanly detach.
+    if [[ -n "${mapper:-}" ]] && is_open "$mapper"; then
+        if is_mounted "$mapper"; then
+            $SUDO umount "/dev/mapper/$mapper" || die "could not unmount; aborting destroy"
+        fi
+        $SUDO cryptsetup close "$mapper" || die "could not close vault; aborting destroy"
+    fi
+
+    if [[ -n "${loc:-}" && -e "$loc" ]]; then
+        echo "Wiping LUKS header (destroys the keyslots -> data is unrecoverable)..."
+        # The LUKS2 header lives in the first 16 MiB of the container.
+        $SUDO dd if=/dev/urandom of="$loc" bs=1M count=16 conv=notrunc status=none || true
+        sync   # make sure the overwrite actually reaches the disk
+        $SUDO rm -f "$loc"
+    fi
+
+    local mnt
+    mnt=$(config_get "$VAULT" mount) || true
+    if [[ -n "${mnt:-}" && -d "$mnt" ]]; then
+        rmdir "$mnt" 2>/dev/null || true   # only removes it if empty
+    fi
+
+    config_del_vault "$VAULT"
+    echo "Vault '$VAULT' destroyed."
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault configure  (interactive sub-menu)
+# Everyday maintenance: passphrases (keyslots), renames, relocation,
+# custom config values.
+# ----------------------------------------------------------------------------
+
+# Add another passphrase to the vault.
+cfg_add_key() {
+    local loc; loc=$(config_get "$VAULT" location) || die "no location"
+    $SUDO cryptsetup luksAddKey "$loc" && echo "Keyslot added." || echo "Failed."
+}
+
+# Remove a passphrase. Refuses to remove the last one (that would make the
+# vault permanently unopenable). Removal requires typing the vault name.
+cfg_remove_key() {
+    local loc active
+    loc=$(config_get "$VAULT" location) || die "no location"
+    active=$($SUDO cryptsetup luksDump "$loc" | grep -cE '^[[:space:]]+[0-9]+: luks2' || true)
+    if (( active <= 1 )); then
+        echo "Only one keyslot remains — refusing to remove it (would brick the vault)."
+        return
+    fi
+    echo "Active keyslots: ${active}"
+    confirm_name "Removing a passphrase is irreversible for that keyslot." || return
+    local m
+    read -rp "Remove by (p)assphrase or (s)lot number? [p/s] " m || return
+    if [[ "$m" == s ]]; then
+        $SUDO cryptsetup luksDump "$loc" | grep -E '^[[:space:]]+[0-9]+: luks2' || true
+        local slot
+        read -rp "Slot number to remove: " slot || return
+        [[ "$slot" =~ ^[0-9]+$ ]] || { echo "Invalid slot."; return; }
+        $SUDO cryptsetup luksKillSlot "$loc" "$slot" && echo "Slot ${slot} removed." || echo "Failed."
+    else
+        echo "Enter the passphrase you want to REMOVE."
+        $SUDO cryptsetup luksRemoveKey "$loc" && echo "Key removed." || echo "Failed."
+    fi
+}
+
+# Show the vault's technical header info (cipher, keyslots in use, etc).
+cfg_show() {
+    local loc; loc=$(config_get "$VAULT" location) || die "no location"
+    $SUDO cryptsetup luksDump "$loc"
+}
+
+# Change the vault's name in the config (the encrypted file is untouched).
+cfg_rename() {
+    local mapper; mapper=$(config_get "$VAULT" mapper) || true
+    [[ -n "${mapper:-}" ]] && is_open "$mapper" && die "lock the vault before renaming"
+    local newname
+    read -rp "New vault name: " newname || return
+    valid_name "$newname" || { echo "Invalid name."; return; }
+    config_has_vault "$newname" && { echo "Name already exists."; return; }
+    config_rename_vault "$VAULT" "$newname"
+    config_set "$newname" mapper "vault-${newname}"
+    echo "Renamed '$VAULT' -> '$newname'."
+    VAULT="$newname"
+}
+
+# Move the container file somewhere else (e.g. to a bigger disk).
+cfg_relocate() {
+    local mapper loc newloc
+    mapper=$(config_get "$VAULT" mapper) || true
+    loc=$(config_get "$VAULT" location) || die "no location"
+    [[ -n "${mapper:-}" ]] && is_open "$mapper" && die "lock the vault before relocating"
+    read -rp "New container path: " newloc || return
+    newloc=$(expand_tilde "$newloc")
+    [[ -e "$newloc" ]] && { echo "Target already exists."; return; }
+    mkdir -p "$(dirname "$newloc")"
+    mv "$loc" "$newloc" || { echo "Move failed."; return; }
+    config_set "$VAULT" location "$newloc"
+    echo "Container moved to ${newloc}."
+}
+
+# Change which folder the vault appears at when unlocked.
+cfg_remount() {
+    local mapper newmnt; mapper=$(config_get "$VAULT" mapper) || true
+    [[ -n "${mapper:-}" ]] && is_mounted "$mapper" && die "lock the vault before changing its mount point"
+    read -rp "New mount point: " newmnt || return
+    newmnt=$(expand_tilde "$newmnt")
+    config_set "$VAULT" mount "$newmnt"
+    echo "Mount point set to ${newmnt}."
+}
+
+# Store any extra note/value against this vault in the config file.
+cfg_custom() {
+    local k v
+    read -rp "Config key (letters/digits/_): " k || return
+    [[ "$k" =~ ^[A-Za-z0-9_]+$ ]] || { echo "Invalid key."; return; }
+    read -rp "Value (leave empty to unset): " v || return
+    if [[ -z "$v" ]]; then
+        config_unset "$VAULT" "$k"; echo "Unset ${k}."
+    else
+        config_set "$VAULT" "$k" "$v"; echo "Set ${k}=${v}."
+    fi
+}
+
+cmd_configure() {
+    resolve_vault "${1:-}"
+    while :; do
+        echo
+        echo "Configure vault '$VAULT':"
+        echo "  1) Add a keyslot (new passphrase)"
+        echo "  2) Remove a keyslot"
+        echo "  3) Show header / keyslot info"
+        echo "  4) Rename vault (config name)"
+        echo "  5) Rename / relocate container file"
+        echo "  6) Change mount point"
+        echo "  7) Set a custom config value"
+        echo "  0) Done"
+        local c
+        read -rp "Choose: " c || break
+        case "$c" in
+            1) cfg_add_key ;;
+            2) cfg_remove_key ;;
+            3) cfg_show ;;
+            4) cfg_rename ;;
+            5) cfg_relocate ;;
+            6) cfg_remount ;;
+            7) cfg_custom ;;
+            0) break ;;
+            *) echo "Invalid choice." ;;
+        esac
+    done
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault backup
+# Builds a single .tar.gz archive suitable for OFFSITE backup. It contains:
+#   * luks-header.img — a copy of the vault's LUKS header (the keyslots).
+#     Needed to recover from header corruption. USELESS without a passphrase.
+#   * vault.conf      — this vault's lines from your config file.
+#   * container.img   — (optional) the full encrypted container, so the
+#     backup can actually restore your files, not just repair a header.
+#   * RESTORE.txt     — step-by-step recovery instructions.
+#
+# What it deliberately does NOT contain: the raw "master key" (the secret
+# that would open the data with no passphrase at all). Anyone who steals
+# this archive still needs one of your passphrases.
+# ----------------------------------------------------------------------------
+cmd_backup() {
+    resolve_vault "${1:-}"
+    local loc
+    loc=$(config_get "$VAULT" location) || die "no location"
+    [[ -e "$loc" ]] || die "container not found: $loc"
+
+    local ts outdefault out
+    ts=$(date -u +%Y%m%d-%H%M%SZ)
+    outdefault="${PWD}/vault-backup-${VAULT}-${ts}.tar.gz"
+    read -rp "Backup archive path [${outdefault}]: " out || die "aborted"
+    out=$(expand_tilde "${out:-$outdefault}")
+
+    local incl_data=1
+    echo "Encrypted container size: $(human "$(stat -c %s "$loc")")."
+    confirm "Include the full encrypted container (needed to actually restore files)?" || incl_data=0
+
+    # Work in a private temp dir; guarantee it's removed even if we fail.
+    local work
+    work=$(mktemp -d)
+    trap 'rm -rf "$work"' EXIT
+
+    echo "Backing up LUKS header (keyslots only — NOT the raw master key)..."
+    $SUDO cryptsetup luksHeaderBackup "$loc" --header-backup-file "$work/luks-header.img" \
+        || die "header backup failed"
+    $SUDO chown "$(id -u):$(id -g)" "$work/luks-header.img" 2>/dev/null || true
+    chmod 600 "$work/luks-header.img" 2>/dev/null || true
+
+    grep "^${VAULT}\." "$VAULTCONFIG" > "$work/vault.conf" 2>/dev/null || true
+
+    if (( incl_data )); then
+        echo "Copying encrypted container (this may take a while)..."
+        cp --reflink=auto "$loc" "$work/container.img" 2>/dev/null || cp "$loc" "$work/container.img"
+    fi
+
+    cat > "$work/RESTORE.txt" <<EOF
+Vault backup — RESTORE INSTRUCTIONS
+===================================
+Vault: ${VAULT}
+Made:  ${ts}
+
+Contents of this archive:
+  luks-header.img  Backup of the LUKS2 header (key slots).
+  vault.conf       This vault's metadata from your .vaultconfig.
+  container.img    The full ENCRYPTED container$( (( incl_data )) || echo " (NOT included this time)" ).
+  RESTORE.txt      This file.
+
+This archive does NOT contain the raw master key. Your data is only
+accessible with a passphrase that is valid on the header. Keep at least one
+passphrase memorized/stored SEPARATELY from this archive.
+
+Restore the whole vault on a new machine:
+  1. Copy container.img to a location, e.g.  ~/vaults/${VAULT}.img
+  2. Open and mount it:
+       sudo cryptsetup open ~/vaults/${VAULT}.img ${VAULT}
+       sudo mkdir -p /mnt/${VAULT}
+       sudo mount /dev/mapper/${VAULT} /mnt/${VAULT}
+  3. (Optional) Recreate its entry in ~/.vaultconfig using vault.conf.
+
+Repair only a damaged header on an existing container:
+       sudo cryptsetup luksHeaderRestore <container> \\
+            --header-backup-file luks-header.img
+
+SECURITY NOTE
+-------------
+The header in this backup accepts any passphrase that was valid when the
+backup was made. If you later remove or replace a compromised passphrase on
+the live vault, THIS backup is not updated — the old passphrase still opens
+it. Regenerate your backups after changing keys.
+EOF
+
+    tar -czf "$out" -C "$work" .
+    chmod 600 "$out"
+    rm -rf "$work"
+    trap - EXIT
+
+    echo
+    echo "Backup written to: $out"
+    echo "Contents: luks-header.img, vault.conf, RESTORE.txt$( (( incl_data )) && echo ', container.img' )"
+    echo
+    echo "IMPORTANT:"
+    echo "  * No raw master key is included."
+    echo "  * It IS unlockable with any passphrase currently valid on the vault —"
+    echo "    store it somewhere you trust and keep a passphrase separate."
+    echo "  * After revoking a leaked passphrase, make a fresh backup (see RESTORE.txt)."
+}
+
+# ----------------------------------------------------------------------------
+# COMMAND: vault list
+# A quick status table: every configured vault, whether it is currently
+# unlocked, whether it is mounted, and where its container file lives.
+# ----------------------------------------------------------------------------
+cmd_list() {
+    local vaults=()
+    mapfile -t vaults < <(config_list_vaults)
+    (( ${#vaults[@]} > 0 )) || { echo "No vaults configured."; return; }
+    printf '%-20s %-8s %-8s %s\n' "NAME" "STATE" "MOUNTED" "LOCATION"
+    local v mapper loc state mounted
+    for v in "${vaults[@]}"; do
+        mapper=$(config_get "$v" mapper) || mapper=""
+        loc=$(config_get "$v" location) || loc="?"
+        state="locked"; mounted="no"
+        if [[ -n "$mapper" ]] && is_open "$mapper"; then state="unlocked"; fi
+        if [[ -n "$mapper" ]] && is_mounted "$mapper"; then mounted="yes"; fi
+        printf '%-20s %-8s %-8s %s\n' "$v" "$state" "$mounted" "$loc"
+    done
+}
+
+# ----------------------------------------------------------------------------
+# HELP TEXT
+# ----------------------------------------------------------------------------
+print_usage() {
+    cat <<'EOF'
+vault — manage file-backed LUKS2 encrypted containers
+
+USAGE
+  vault <command> [VAULTNAME] [global options]
+
+  If VAULTNAME is omitted from a command that needs one, an interactive
+  menu lists the vaults from your config file so you can pick one.
+
+COMMANDS
+  create                 Interactively build a new vault (container file,
+                         size, mount point) and save it to the config.
+                         Supports adding multiple keyslots (passphrases).
+  unlock  [VAULTNAME]    Open the LUKS container and mount it as a directory.
+  lock    [VAULTNAME]    Unmount and close the container.
+  grow    [VAULTNAME]    Interactively enlarge a vault's capacity (locks it,
+                         extends the file, and grows the ext4 filesystem).
+  configure [VAULTNAME]  Menu to add/remove keyslots, rename in the config,
+                         rename/relocate the container file, change the mount
+                         point, or set custom config values.
+  backup  [VAULTNAME]    Write a .tar.gz with the LUKS header, this vault's
+                         config, restore notes, and (optionally) the full
+                         encrypted container. Never includes the master key.
+  destroy [VAULTNAME]    Wipe the container's header, delete its files, and
+                         remove its config entry. Requires typing the vault's
+                         exact name (like GitHub repo deletion), then DESTROY,
+                         then a final yes/no.
+  list                   Show configured vaults and their lock/mount state.
+
+GLOBAL OPTIONS
+  --usage, -h, --help    Show this help.
+  --vaultconfig=PATH     Use an alternate config file for this invocation
+                         (default: ~/.vaultconfig).
+
+NOTES
+  * Passphrases are entered directly into cryptsetup; this tool never sees them.
+  * Privileged steps use sudo automatically when you are not root.
+  * Vaults use LUKS2 with aes-xts-plain64 (AES-256) and the argon2id KDF.
+EOF
+}
+
+# ----------------------------------------------------------------------------
+# ARGUMENT PARSING AND DISPATCH
+# Global flags (like --vaultconfig=...) may appear anywhere; everything else
+# is treated as the command and its vault-name argument.
+# ----------------------------------------------------------------------------
+main() {
+    local args=()
+    while (( $# )); do
+        case "$1" in
+            --usage|-h|--help) print_usage; exit 0 ;;
+            --vaultconfig=*)   VAULTCONFIG=$(expand_tilde "${1#*=}") ;;
+            --)                shift; while (( $# )); do args+=("$1"); shift; done; break ;;
+            *)                 args+=("$1") ;;
+        esac
+        shift
+    done
+    # Re-set the positional parameters to the non-flag arguments.
+    # (The ${args[@]+...} idiom is the safe way to expand a possibly-empty
+    # array under `set -u`.)
+    set -- ${args[@]+"${args[@]}"}
+
+    local cmd=${1:-}
+    [[ -n "$cmd" ]] || { print_usage; exit 1; }
+    shift || true
+
+    # Recognize the command first, THEN check for cryptsetup — so a typo'd
+    # command gets a helpful error even on a machine missing the tools.
+    case "$cmd" in
+        create|unlock|lock|grow|configure|backup|destroy|list) check_deps ;;
+        *) die "unknown command: '$cmd' (try --usage)" ;;
+    esac
+
+    case "$cmd" in
+        create)    cmd_create    "${1:-}" ;;
+        unlock)    cmd_unlock    "${1:-}" ;;
+        lock)      cmd_lock      "${1:-}" ;;
+        grow)      cmd_grow      "${1:-}" ;;
+        configure) cmd_configure "${1:-}" ;;
+        backup)    cmd_backup    "${1:-}" ;;
+        destroy)   cmd_destroy   "${1:-}" ;;
+        list)      cmd_list ;;
+    esac
+}
+
+main "$@"
