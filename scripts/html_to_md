@@ -4,7 +4,7 @@ WEBPAGE=$1
 NAME=`basename "$WEBPAGE" .html`
 
 MONOFLAGS='--no-js --insecure'
-MDFLAGS='-raw_html-native_divs-native_spans'
+MDFLAGS='-smart-raw_html-native_divs-native_spans f'
 PANDOCFLAGS='+RTS -K512m -RTS'
 
 monolith $MONOFLAGS $WEBPAGE > $NAME.html
