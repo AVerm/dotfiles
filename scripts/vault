@@ -24,6 +24,11 @@
 #     That is by design — it's what makes the encryption trustworthy.
 #   * Destructive actions (like destroying a vault) require you to type the
 #     vault's exact name to confirm, like deleting a repository on GitHub.
+#   * Everyday unlock/lock does NOT need your admin (sudo) password when you
+#     are at your desktop: it goes through "udisks", the same system service
+#     your file manager uses for USB drives. Unlocking asks only for the
+#     vault passphrase; locking asks for nothing. Rare maintenance commands
+#     (create, grow, configure, backup) still use sudo.
 #
 #  COMMANDS (run `vault --usage` for details):
 #     create, unlock, lock, grow, configure, backup, destroy, list
@@ -49,8 +54,15 @@ PBKDF="argon2id"                     # Passphrase-hardening function. Memory-
                                      # hard: makes password-guessing with
                                      # GPUs/ASICs impractical.
 
-# Privileged steps (opening encrypted devices, mounting) need root.
-# If we're not root already, prefix those steps with sudo.
+UNLOCK_TRIES=3                       # Passphrase attempts allowed per unlock.
+UNLOCK_BACKEND="auto"                # How unlock/lock talk to the system:
+                                     #  auto   - use udisks if installed (no
+                                     #           sudo password), else sudo
+                                     #  udisks - always udisks
+                                     #  sudo   - always sudo (old behavior)
+
+# Maintenance steps (formatting, resizing) need root. If we're not root
+# already, prefix those steps with sudo.
 if [[ ${EUID} -eq 0 ]]; then SUDO=""; else SUDO="sudo"; fi
 
 VAULT=""   # Filled in by resolve_vault() — the vault the user selected.
@@ -114,13 +126,101 @@ human() { numfmt --to=iec --suffix=B "$1" 2>/dev/null || echo "$1 bytes"; }
 valid_name() { [[ "$1" =~ ^[A-Za-z0-9_-]+$ ]]; }
 valid_size() { [[ "$1" =~ ^[0-9]+([KMGTkmgt])?$ ]]; }
 
-# Is the vault's decrypted device currently present? / currently mounted?
-is_open()    { [[ -b "/dev/mapper/$1" ]]; }
+# ----------------------------------------------------------------------------
+# FINDING A VAULT'S LIVE STATE
+# When a vault is unlocked, Linux stacks three layers on top of the file:
+#   container file -> "loop device" (/dev/loopN: makes the file act like a disk)
+#                  -> "crypt" device (the decrypted view of that disk)
+#                  -> a mount (the folder you browse)
+# These helpers walk that chain starting from the container file, so they
+# give the right answer no matter which tool (udisks or sudo) unlocked it.
+# Each helper prints nothing (and still succeeds) when a layer is absent.
+# ----------------------------------------------------------------------------
+
+# Which loop device, if any, is attached to this container file?
+# Reads the kernel's public list in /sys, which needs no special permission.
+loop_of() {
+    local f b
+    f=$(realpath -e -- "$1" 2>/dev/null) || return 0
+    for b in /sys/block/loop*/loop/backing_file; do
+        [[ -r "$b" ]] || continue
+        if [[ "$(< "$b")" == "$f" ]]; then
+            b=${b#/sys/block/}
+            printf '/dev/%s' "${b%%/*}"
+            return 0
+        fi
+    done
+}
+
+# Which decrypted device, if any, sits on top of this loop device?
+crypt_of_loop() {
+    [[ -n "${1:-}" ]] || return 0
+    lsblk -nrpo NAME,TYPE "$1" 2>/dev/null | awk '$2 == "crypt" { print $1; exit }' || true
+}
+
+# Where, if anywhere, is this device mounted? (lsblk escapes spaces as
+# "\x20"; printf %b turns them back into real spaces.)
+mount_of_dev() {
+    [[ -n "${1:-}" ]] || return 0
+    local m
+    m=$(lsblk -nro MOUNTPOINT "$1" 2>/dev/null | awk 'NF { print; exit }' || true)
+    if [[ -n "$m" ]]; then printf '%b' "$m"; fi
+}
+
+# The decrypted device for a vault (by vault name), or nothing if locked.
+vault_crypt() {
+    local loc mapper loop c=""
+    loc=$(config_get "$1" location) || loc=""
+    mapper=$(config_get "$1" mapper) || mapper=""
+    if [[ -n "$loc" ]]; then
+        loop=$(loop_of "$loc")
+        c=$(crypt_of_loop "$loop")
+    fi
+    # Fallback for vaults opened the old way under a fixed name.
+    if [[ -z "$c" && -n "$mapper" && -b "/dev/mapper/$mapper" ]]; then
+        c="/dev/mapper/$mapper"
+    fi
+    printf '%s' "$c"
+}
+
+# Is the vault unlocked? / Is it unlocked AND mounted? (Take a vault name.)
+is_open()    { [[ -n "$(vault_crypt "$1")" ]]; }
 is_mounted() {
-    if command -v findmnt &>/dev/null; then
-        findmnt -rn --source "/dev/mapper/$1" &>/dev/null
+    local c
+    c=$(vault_crypt "$1")
+    [[ -n "$c" && -n "$(mount_of_dev "$c")" ]]
+}
+
+# Should unlock/lock go through udisks (no sudo password) right now?
+use_udisks() {
+    case "$UNLOCK_BACKEND" in
+        udisks) command -v udisksctl &>/dev/null \
+                    || die "UNLOCK_BACKEND=udisks but udisksctl is not installed (apt install udisks2)" ;;
+        sudo)   return 1 ;;
+        *)      command -v udisksctl &>/dev/null ;;
+    esac
+}
+
+# udisks mounts vaults in its own place (usually /media/YOU/VAULTNAME). To keep
+# your chosen folder working, we make that folder a shortcut (symlink) to
+# wherever udisks mounted it. An EMPTY folder is replaced; a non-empty one is
+# never touched — we just tell you where the vault actually is.
+link_mount() {
+    local want=$1 actual=$2
+    [[ "$want" == "$actual" ]] && return 0
+    if [[ -L "$want" ]]; then
+        ln -sfn -- "$actual" "$want"
+    elif [[ -d "$want" ]]; then
+        if rmdir -- "$want" 2>/dev/null; then
+            ln -s -- "$actual" "$want"
+        else
+            warn "$want is not empty, so it can't become a shortcut; the vault is at $actual"
+        fi
+    elif [[ ! -e "$want" ]]; then
+        mkdir -p -- "$(dirname -- "$want")"
+        ln -s -- "$actual" "$want"
     else
-        grep -q "^/dev/mapper/$1 " /proc/mounts 2>/dev/null
+        warn "$want exists and is not a folder; the vault is at $actual"
     fi
 }
 
@@ -312,7 +412,10 @@ cmd_create() {
     echo "Initializing ${fs} filesystem (enter the passphrase once more)..."
     $SUDO cryptsetup open "$location" "$mapper" \
         || { rm -f "$location"; die "failed to open new container"; }
-    $SUDO mkfs.ext4 -q "/dev/mapper/$mapper" \
+    # -L labels the filesystem with the vault name (ext4 allows 16 chars), so
+    # udisks mounts it at a recognizable /media/YOU/NAME.
+    # -E root_owner makes YOU the owner of the vault's top folder, not root.
+    $SUDO mkfs.ext4 -q -L "${name:0:16}" -E root_owner="$(id -u):$(id -g)" "/dev/mapper/$mapper" \
         || { $SUDO cryptsetup close "$mapper"; rm -f "$location"; die "mkfs failed"; }
     $SUDO cryptsetup close "$mapper"
 
@@ -333,7 +436,16 @@ cmd_create() {
 # ----------------------------------------------------------------------------
 # COMMAND: vault unlock
 # Decrypts the container (asks for your passphrase) and mounts it as a
-# normal folder. Two steps: cryptsetup open (decrypt) + mount (attach folder).
+# normal folder.
+#
+# Preferred path (udisks): three requests to the udisks system service —
+#   attach the file as a disk -> unlock it -> mount it.
+# Your desktop's security policy ("polkit") lets the person sitting at the
+# computer do all three for their own files without an admin password, so
+# the ONLY password asked is the vault passphrase. (Over SSH, polkit may
+# ask for your admin password instead — same as sudo would.)
+#
+# Fallback path (sudo): the original cryptsetup + mount method.
 # ----------------------------------------------------------------------------
 cmd_unlock() {
     resolve_vault "${1:-}"
@@ -343,15 +455,181 @@ cmd_unlock() {
     mnt=$(config_get "$VAULT" mount)     || die "config missing 'mount' for $VAULT"
     [[ -e "$loc" ]] || die "container file not found: $loc"
 
-    if is_open "$mapper"; then
-        echo "Already unlocked."
+    if use_udisks; then
+        unlock_udisks "$loc" "$mnt"
     else
-        $SUDO cryptsetup open "$loc" "$mapper" || die "unlock failed"
+        unlock_sudo "$loc" "$mapper" "$mnt"
+    fi
+}
+
+unlock_udisks() {
+    local loc=$1 mnt=$2 loop crypt actual i
+
+    # Layer 1: attach the container file as a loop device.
+    loop=$(loop_of "$loc")
+    if [[ -z "$loop" ]]; then
+        udisksctl loop-setup --file "$loc" || die "could not attach the container file"
+        loop=$(loop_of "$loc")
+        [[ -n "$loop" ]] || die "container attached, but its loop device could not be found"
     fi
 
+    # Layer 2: decrypt. See unlock_race for why this isn't one simple call.
+    crypt=$(crypt_of_loop "$loop")
+    if [[ -n "$crypt" ]]; then
+        echo "Already unlocked."
+    else
+        unlock_race "$loop"
+        # The decrypted device can take a moment to appear; wait up to ~2s.
+        for i in {1..20}; do
+            crypt=$(crypt_of_loop "$loop")
+            [[ -n "$crypt" ]] && break
+            sleep 0.1
+        done
+        if [[ -z "$crypt" ]]; then
+            udisksctl loop-delete --no-user-interaction --block-device "$loop" &>/dev/null || true
+            die "unlock failed (wrong passphrase, or the prompt was cancelled)"
+        fi
+    fi
+
+    # Layer 3: mount. If the desktop window did the unlocking, the desktop
+    # usually mounts it too — possibly at the same instant we try. So a failed
+    # mount request is only a real failure if, after a short wait, the vault
+    # still isn't mounted by anyone.
+    actual=$(mount_of_dev "$crypt")
+    if [[ -n "$actual" ]]; then
+        echo "Already mounted."
+    else
+        if ! udisksctl mount --block-device "$crypt" 2>/dev/null; then
+            for i in {1..30}; do
+                actual=$(mount_of_dev "$crypt")
+                [[ -n "$actual" ]] && break
+                sleep 0.1
+            done
+            if [[ -z "$actual" ]]; then
+                do_lock "$VAULT" || true    # don't leave it decrypted but unmounted
+                die "mount failed; vault re-locked"
+            fi
+        fi
+        actual=$(mount_of_dev "$crypt")
+        [[ -n "$actual" ]] || die "mounted, but could not determine where"
+    fi
+
+    link_mount "$mnt" "$actual"
+    if [[ "$mnt" == "$actual" ]]; then
+        echo "Vault '$VAULT' unlocked at: $mnt"
+    else
+        echo "Vault '$VAULT' unlocked at: $mnt  (-> $actual)"
+    fi
+}
+
+# ----------------------------------------------------------------------------
+# TWO PASSPHRASE PROMPTS AT ONCE
+# When the container is attached, your desktop (GNOME, KDE, ...) may notice a
+# new encrypted "drive" and pop up its own unlock window — exactly as it does
+# for an encrypted USB stick. At the same moment, this script asks for the
+# passphrase in the terminal. Answer EITHER one:
+#   * The terminal prompt runs in the background while the script watches
+#     for the vault to become unlocked by any route.
+#   * If the desktop window unlocks it first, the script closes the now-
+#     pointless terminal prompt and carries on.
+#   * A wrong passphrase in the terminal gets you another try, up to
+#     UNLOCK_TRIES attempts in total (set near the top of this file).
+# The terminal's settings are saved and restored, because a closed prompt
+# may have turned off on-screen echo (that's what keeps a passphrase hidden).
+# Ctrl-C closes the terminal prompt cleanly too.
+# ----------------------------------------------------------------------------
+_RACE_PID=""
+_RACE_TTY=""
+
+# Stop the current terminal prompt (if still running) and restore the
+# terminal's settings. Keeps the saved settings for the next attempt.
+race_stop_prompt() {
+    if [[ -n "$_RACE_PID" ]]; then
+        { kill "$_RACE_PID"; wait "$_RACE_PID"; } 2>/dev/null || true
+    fi
+    if [[ -n "$_RACE_TTY" ]]; then
+        stty "$_RACE_TTY" </dev/tty 2>/dev/null || true
+    fi
+    _RACE_PID=""
+}
+
+# Final cleanup once unlocking is over (or interrupted).
+race_cleanup() {
+    race_stop_prompt
+    _RACE_TTY=""
+}
+
+unlock_race() {
+    local loop=$1 attempt i
+
+    # No terminal at all (e.g. started from a launcher)? Then there's nothing
+    # to race: let udisks ask however it can (usually a desktop window).
+    if ! { : </dev/tty; } 2>/dev/null; then
+        udisksctl unlock --block-device "$loop" || true
+        return 0
+    fi
+
+    _RACE_TTY=$(stty -g </dev/tty 2>/dev/null || true)
+    trap 'race_cleanup; echo; exit 130' INT TERM
+
+    for (( attempt = 1; attempt <= UNLOCK_TRIES; attempt++ )); do
+        # Terminal prompt, in the background, wired explicitly to the
+        # terminal (scripts otherwise give background commands an empty input).
+        udisksctl unlock --block-device "$loop" </dev/tty &
+        _RACE_PID=$!
+
+        # Watch until this prompt finishes on its own, or the vault gets
+        # unlocked some other way (the desktop window).
+        while kill -0 "$_RACE_PID" 2>/dev/null; do
+            if [[ -n "$(crypt_of_loop "$loop")" ]]; then
+                # Unlocked. If it was the terminal prompt, it finishes by
+                # itself within a moment; give it that chance before
+                # crediting the desktop window.
+                for i in {1..5}; do
+                    kill -0 "$_RACE_PID" 2>/dev/null || break
+                    sleep 0.1
+                done
+                if kill -0 "$_RACE_PID" 2>/dev/null; then
+                    race_stop_prompt
+                    echo
+                    echo "Vault unlocked (via the desktop window); terminal prompt closed."
+                fi
+                break
+            fi
+            sleep 0.2
+        done
+
+        # Reap the prompt if it finished on its own (its output already printed).
+        race_stop_prompt
+
+        # Unlocked by either route? Done. Otherwise, offer another try.
+        [[ -n "$(crypt_of_loop "$loop")" ]] && break
+        if (( attempt < UNLOCK_TRIES )); then
+            echo "Not unlocked — try again ($(( UNLOCK_TRIES - attempt )) attempt(s) left)."
+        fi
+    done
+
+    race_cleanup
+    trap - INT TERM
+    # Success or failure is judged by the caller from the device itself, not
+    # from which prompt exited how.
+}
+
+unlock_sudo() {
+    local loc=$1 mapper=$2 mnt=$3
+
+    if is_open "$VAULT"; then
+        echo "Already unlocked."
+    else
+        $SUDO cryptsetup open --tries "$UNLOCK_TRIES" "$loc" "$mapper" || die "unlock failed"
+    fi
+
+    # If a previous udisks unlock turned the folder into a shortcut, turn it
+    # back into a real folder (removes only the shortcut, never its target).
+    if [[ -L "$mnt" ]]; then rm -f -- "$mnt"; fi
     mkdir -p "$mnt" 2>/dev/null || $SUDO mkdir -p "$mnt"
 
-    if is_mounted "$mapper"; then
+    if is_mounted "$VAULT"; then
         echo "Already mounted."
     else
         $SUDO mount "/dev/mapper/$mapper" "$mnt" \
@@ -365,24 +643,57 @@ cmd_unlock() {
 
 # ----------------------------------------------------------------------------
 # COMMAND: vault lock
-# The reverse of unlock: unmount the folder, then close the encrypted
-# device. After this, only the scrambled container file remains on disk.
-# We unmount by DEVICE (not by the folder path in the config) so a stale or
-# edited config can never cause us to unmount the wrong thing.
+# The reverse of unlock: unmount the folder, close the decrypted device,
+# and detach the container file. After this, only the scrambled container
+# file remains.
+#
+# Via udisks this needs NO password at all. If udisks refuses (for example,
+# the vault was unlocked the old sudo way, by root), we fall back to sudo.
+# We always act on the DEVICE found from the container file, never on the
+# folder path in the config, so a stale config can't unmount the wrong thing.
 # ----------------------------------------------------------------------------
 cmd_lock() {
     resolve_vault "${1:-}"
-    local mapper
-    mapper=$(config_get "$VAULT" mapper) || die "config missing 'mapper' for $VAULT"
-
-    if is_mounted "$mapper"; then
-        $SUDO umount "/dev/mapper/$mapper" \
-            || die "unmount failed (are files in the vault still open in some program?)"
-    fi
-    if is_open "$mapper"; then
-        $SUDO cryptsetup close "$mapper" || die "close failed"
-    fi
+    do_lock "$VAULT" || die "lock failed"
     echo "Vault '$VAULT' locked."
+}
+
+# Lock a vault by name. Returns failure (rather than exiting) so callers like
+# destroy and grow can decide what to do.
+do_lock() {
+    local v=$1 loc crypt loop="" name
+    loc=$(config_get "$v" location) || loc=""
+    crypt=$(vault_crypt "$v")
+    if [[ -n "$loc" ]]; then loop=$(loop_of "$loc"); fi
+
+    # Step 1: unmount.
+    if [[ -n "$crypt" && -n "$(mount_of_dev "$crypt")" ]]; then
+        if ! { use_udisks && udisksctl unmount --no-user-interaction \
+                    --block-device "$crypt" &>/dev/null; }; then
+            $SUDO umount -- "$crypt" || {
+                warn "unmount failed (are files in the vault still open in some program?)"
+                return 1
+            }
+        fi
+    fi
+
+    # Step 2: close the decrypted device (this forgets the key).
+    if [[ -n "$crypt" ]]; then
+        if ! { use_udisks && [[ -n "$loop" ]] && udisksctl lock --no-user-interaction \
+                    --block-device "$loop" &>/dev/null; }; then
+            name=$(lsblk -nro NAME "$crypt" 2>/dev/null | head -n1 || true)
+            $SUDO cryptsetup close "${name:-$crypt}" || { warn "close failed"; return 1; }
+        fi
+    fi
+
+    # Step 3: detach the container file, if still attached. Harmless if this
+    # fails — an attached-but-locked file exposes nothing.
+    if [[ -n "$loc" ]]; then
+        loop=$(loop_of "$loc")
+        if [[ -n "$loop" ]] && use_udisks; then
+            udisksctl loop-delete --no-user-interaction --block-device "$loop" &>/dev/null || true
+        fi
+    fi
 }
 
 # ----------------------------------------------------------------------------
@@ -401,10 +712,10 @@ cmd_grow() {
     mapper=$(config_get "$VAULT" mapper) || die "config missing 'mapper' for $VAULT"
     [[ -e "$loc" ]] || die "container not found: $loc"
 
-    if is_open "$mapper"; then
+    if is_open "$VAULT"; then
         echo "The vault must be locked before growing."
         confirm "Lock it now?" || die "aborted"
-        cmd_lock "$VAULT"
+        do_lock "$VAULT" || die "could not lock the vault"
     fi
 
     local cur_bytes
@@ -456,9 +767,8 @@ cmd_grow() {
 # ----------------------------------------------------------------------------
 cmd_destroy() {
     resolve_vault "${1:-}"
-    local loc mapper
+    local loc
     loc=$(config_get "$VAULT" location) || true
-    mapper=$(config_get "$VAULT" mapper) || true
 
     echo "!! This PERMANENTLY destroys vault '$VAULT' and ALL data inside it."
     echo "   Container: ${loc:-<unknown>}"
@@ -475,25 +785,27 @@ cmd_destroy() {
 
     # If the vault is open/mounted, close it down first — refuse to destroy
     # something we can't cleanly detach.
-    if [[ -n "${mapper:-}" ]] && is_open "$mapper"; then
-        if is_mounted "$mapper"; then
-            $SUDO umount "/dev/mapper/$mapper" || die "could not unmount; aborting destroy"
-        fi
-        $SUDO cryptsetup close "$mapper" || die "could not close vault; aborting destroy"
+    if is_open "$VAULT"; then
+        do_lock "$VAULT" || die "could not lock the vault; aborting destroy"
     fi
 
     if [[ -n "${loc:-}" && -e "$loc" ]]; then
         echo "Wiping LUKS header (destroys the keyslots -> data is unrecoverable)..."
-        # The LUKS2 header lives in the first 16 MiB of the container.
-        $SUDO dd if=/dev/urandom of="$loc" bs=1M count=16 conv=notrunc status=none || true
+        # The LUKS2 header lives in the first 16 MiB of the container. The
+        # file is normally yours, so try without sudo first.
+        dd if=/dev/urandom of="$loc" bs=1M count=16 conv=notrunc status=none 2>/dev/null \
+            || $SUDO dd if=/dev/urandom of="$loc" bs=1M count=16 conv=notrunc status=none \
+            || die "could not wipe the header; aborting (container NOT deleted)"
         sync   # make sure the overwrite actually reaches the disk
-        $SUDO rm -f "$loc"
+        rm -f -- "$loc" 2>/dev/null || $SUDO rm -f -- "$loc"
     fi
 
     local mnt
     mnt=$(config_get "$VAULT" mount) || true
-    if [[ -n "${mnt:-}" && -d "$mnt" ]]; then
-        rmdir "$mnt" 2>/dev/null || true   # only removes it if empty
+    if [[ -n "${mnt:-}" && -L "$mnt" ]]; then
+        rm -f -- "$mnt"                     # removes only the shortcut
+    elif [[ -n "${mnt:-}" && -d "$mnt" ]]; then
+        rmdir -- "$mnt" 2>/dev/null || true # only removes it if empty
     fi
 
     config_del_vault "$VAULT"
@@ -546,8 +858,7 @@ cfg_show() {
 
 # Change the vault's name in the config (the encrypted file is untouched).
 cfg_rename() {
-    local mapper; mapper=$(config_get "$VAULT" mapper) || true
-    [[ -n "${mapper:-}" ]] && is_open "$mapper" && die "lock the vault before renaming"
+    is_open "$VAULT" && die "lock the vault before renaming"
     local newname
     read -rp "New vault name: " newname || return
     valid_name "$newname" || { echo "Invalid name."; return; }
@@ -560,10 +871,9 @@ cfg_rename() {
 
 # Move the container file somewhere else (e.g. to a bigger disk).
 cfg_relocate() {
-    local mapper loc newloc
-    mapper=$(config_get "$VAULT" mapper) || true
+    local loc newloc
     loc=$(config_get "$VAULT" location) || die "no location"
-    [[ -n "${mapper:-}" ]] && is_open "$mapper" && die "lock the vault before relocating"
+    is_open "$VAULT" && die "lock the vault before relocating"
     read -rp "New container path: " newloc || return
     newloc=$(expand_tilde "$newloc")
     [[ -e "$newloc" ]] && { echo "Target already exists."; return; }
@@ -575,8 +885,8 @@ cfg_relocate() {
 
 # Change which folder the vault appears at when unlocked.
 cfg_remount() {
-    local mapper newmnt; mapper=$(config_get "$VAULT" mapper) || true
-    [[ -n "${mapper:-}" ]] && is_mounted "$mapper" && die "lock the vault before changing its mount point"
+    local newmnt
+    is_mounted "$VAULT" && die "lock the vault before changing its mount point"
     read -rp "New mount point: " newmnt || return
     newmnt=$(expand_tilde "$newmnt")
     config_set "$VAULT" mount "$newmnt"
@@ -734,15 +1044,14 @@ cmd_list() {
     local vaults=()
     mapfile -t vaults < <(config_list_vaults)
     (( ${#vaults[@]} > 0 )) || { echo "No vaults configured."; return; }
-    printf '%-20s %-8s %-8s %s\n' "NAME" "STATE" "MOUNTED" "LOCATION"
-    local v mapper loc state mounted
+    printf '%-20s %-9s %-8s %s\n' "NAME" "STATE" "MOUNTED" "LOCATION"
+    local v loc state mounted
     for v in "${vaults[@]}"; do
-        mapper=$(config_get "$v" mapper) || mapper=""
         loc=$(config_get "$v" location) || loc="?"
         state="locked"; mounted="no"
-        if [[ -n "$mapper" ]] && is_open "$mapper"; then state="unlocked"; fi
-        if [[ -n "$mapper" ]] && is_mounted "$mapper"; then mounted="yes"; fi
-        printf '%-20s %-8s %-8s %s\n' "$v" "$state" "$mounted" "$loc"
+        if is_open "$v"; then state="unlocked"; fi
+        if is_mounted "$v"; then mounted="yes"; fi
+        printf '%-20s %-9s %-8s %s\n' "$v" "$state" "$mounted" "$loc"
     done
 }
 
@@ -785,8 +1094,12 @@ GLOBAL OPTIONS
                          (default: ~/.vaultconfig).
 
 NOTES
-  * Passphrases are entered directly into cryptsetup; this tool never sees them.
-  * Privileged steps use sudo automatically when you are not root.
+  * Passphrases are entered directly into cryptsetup/udisksctl; this tool
+    never sees them.
+  * unlock/lock use udisks when installed: at your desktop, unlock asks only
+    for the vault passphrase and lock asks for nothing. The folder you chose
+    becomes a shortcut to where udisks mounts the vault (/media/YOU/NAME).
+  * create, grow, configure and backup use sudo (they format or resize).
   * Vaults use LUKS2 with aes-xts-plain64 (AES-256) and the argon2id KDF.
 EOF
 }
